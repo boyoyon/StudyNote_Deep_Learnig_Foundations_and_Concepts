@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+        <meta charset="utf-8" />
+        <title>20章</title>
+        <style type="text/css">
+            p
+            {
+                padding-left: 2em;
+            }
+            .margin-large
+            {
+                margin-left: 30px;
+            }
+           .margin-abstract {
+               margin-left: 60px; /* 左マージンを広くする */
+               margin-right: 60px; /* 右マージンを広くする */
+           }
+        </style>
+    <style>
+        .two-columns {
+            display: flex;
+            flex-direction: row;
+            gap: 20px; /* 列間のスペース */
+        }
+        .column {
+            flex: 1; /* 各列が均等に幅を取る */
+        }
+    </style>
+<style>
+.three-columns {
+  display: flex;
+  gap: 10px; /* 列間の余白を設定 */
+}
+.column {
+  flex: 1; /* 各列の幅を均等にする */
+  padding: 10px; /* 内側の余白を設定 */
+}
+</style>
+    <style>
+        .styleRef { 
+            text-indent: -40px; /* 最初の行の字下げを逆方向に */
+            margin-left: 10px; /* 2行目以降の字下げを調整 */
+            ul {
+                  list-style-type: none; /* 箇条書き記号を非表示 */
+                  padding-left: 40px; /* 全体の左余白 */
+            }
+            li {
+            }
+        }
+    </style>
+    <style>
+        .styleBullet { 
+            text-indent: -20px; /* 最初の行の字下げを逆方向に */
+            margin-left: 30px; /* 2行目以降の字下げを調整 */
+            ul {
+                  list-style-type: none; /* 箇条書き記号を非表示 */
+                  padding-left: 0px; /* 全体の左余白 */
+            }
+            li {
+            }
+        }
+    </style>
+    <style>
+            ol
+            {
+                margin-left: 30px;
+            }
+            ul
+            {
+                margin-left: 30px;
+            }
+    </style>
+    </head>
+    <body>
+        <h1><center>20章</center><center>拡散モデル</center></h1>
+<p>
+
+リッチな生成モデルを構築する強力な方法は、潜在変数 \(\mathbf z\) 上の分布 \(p(\mathbf z)\) を導入し、ディープニューラルネットワークを用いて \(\mathbf z\) をデータ空間 \(\mathbf x\) に変換することであることを見てきた。ニューラルネットワークの一般性により、\(p(\mathbf z)\) は \(\mathbf x\) 上の非常に柔軟な分布族に変換されるため、ガウス分布 \(\mathcal N(\mathbf z|\mathbf 0, \mathbf I)\) などの単純で固定された分布 \(p(\mathbf z)\) を使用すれば十分である。これまでの章では、この枠組みに適合しながら、生成的敵対ネットワーク、変分オートエンコーダ、正規化フローに基づいて、ディープニューラルネットワークの定義と学習に異なるアプローチを採用するいくつかのモデルを検討した。
+
+</p><p>
+
+　本章では、この一般的な枠組みにおける4つ目のモデルクラス、拡散モデル、またはノイズ除去拡散確率モデル（DDPM）（Sohl Dickstein et al., 2015; Ho, Jain, and Abbeel, 2020）について説明する。DDPMは、多くのアプリケーションにおいて最先端のモデルとして登場している。この枠組みはより広範な適用範囲を持つが、説明のために画像データのモデルに焦点を当てる。中心的な考え方は、各トレーニング画像を複数段階のノイズ処理を用いて破壊し、ガウス分布のサンプルに変換することである。これは図20.1に示されている。次に、ディープニューラルネットワークをこのプロセスを反転するようにトレーニングする。トレーニングが完了すると、ネットワークはガウス分布のサンプルを入力として新しい画像を生成できるようになる。
+
+</p>
+<center><img src="images/fig20_1.png"></center>
+<p class="margin-large">
+
+図20.1 拡散モデルにおけるエンコード処理の図解。画像 \(\mathbf x\) が段階的に劣化し、複数段階の加法性ガウスノイズによってノイズが増大する一連の画像が生成される。T段階のステップを経ると、結果はガウス分布から抽出されたサンプルと区別がつかなくなる。次に、ディープニューラルネットワークを学習させて、このプロセスを逆順に実行する。
+
+</p>
+<p>
+
+　拡散モデルは、エンコーダ分布が固定され、ノイズ過程によって定義され、生成分布のみが学習される階層的変分オートエンコーダの一種と見なすことができる (Luo, 2022)。拡散モデルは学習が容易で、並列ハードウェア上でのスケーリングが容易であり、敵対的学習の課題や不安定性を回避しながら、生成敵対ネットワークと同等かそれ以上の品質の結果を生成する。ただし、デコーダネットワークを複数回通過する必要があるため、新しいサンプルを生成するには計算コストが高くなる可能性がある (Dhariwal and Nichol, 2021)。
+
+</p>
+<h2>20.1 順方向エンコーダー</h2>
+<p>
+
+　訓練セットから画像を取り出し、これを \(\mathbf x\) と表記し、各ピクセルごとに独立にガウスノイズとブレンドして、次のように定義されるノイズ劣化画像 \(\mathbf z_1\) を作成する。
+
+\[
+\mathbf z_1=\sqrt{1-\beta_1}\mathbf x+\sqrt{\beta_1}\boldsymbol{\epsilon}_1 \tag{20.1}
+\]
+
+ここで、\(\boldsymbol{\epsilon}_1\sim \mathcal N(\boldsymbol{\epsilon}_1\mid \mathbf 0, \mathbf I)\) および \(\beta_1\lt 1\) はノイズ分布の分散である。(20.1) および (20.3) における係数 \(\sqrt{1-\beta_1}\) および \(\sqrt{\beta_1}\)  の選択は、\(z_t\) の分布の平均が \(z_{t-1}\) の平均よりもゼロに近くなること、および  \(z_t\) の分散が \(z_{t-1}\) の分散よりも単位行列に近くなることを保証する。変換 (20.1) は次のように書くことができる。
+
+\[
+q(\mathbf z_1\mid \mathbf x)=\mathcal N(\mathbf z_1\mid \sqrt{1-\beta_1}\mathbf x, \beta_1\mathbf I)  \tag{20.2}
+\]
+
+次に、このプロセスを独立したガウスノイズステップを追加しながら繰り返し、ノイズが徐々に増加する画像列 \(\mathbf z_2, ..., \mathbf z_T\) を得る。拡散モデルに関する文献では、これらの潜在変数は \(\mathbf x_1, ..., \mathbf x_T\) と表記され、観測変数は \(\mathbf x_0\) と表記される場合があることに注意。本書の他の部分との一貫性を保つため、潜在変数には \(\mathbf z\)、観測変数には \(\mathbf x\) という表記を用いる。各連続画像は次のように表される。
+
+\[
+\mathbf z_t =\sqrt{1-\beta_t}\mathbf z_{t-1}+\sqrt{\beta_t}\boldsymbol{\epsilon}_t \tag{20.3}
+\]
+
+ここで \(\boldsymbol{\epsilon}_t\sim \mathcal N(\boldsymbol{\epsilon}_t\mid \mathbf 0, \mathbf I)\)。繰り返しになるが、(20.3)も以下の形式で書くことができる。
+
+\[
+q(\mathbf z_t\mid \mathbf z_{t-1})=\mathcal N(\mathbf z_t\mid \sqrt{1-\beta_t}\mathbf z_{t-1},\beta_t\mathbf I) \tag{20.4}
+\]
+
+条件付き分布の列 (20.4) はマルコフ連鎖を形成し、図20.2 に示すように確率的グラフィカルモデルとして表現できる。分散パラメータ \(\beta_t\in (0,1)\) の値は手動で設定され、通常は、所定のスケジュールに従って連鎖を通じて分散値が増加するように選択される (\(\beta_1 \lt \beta_2 \lt \cdots \lt \beta_T\))。
+</p>
+<center><img src="images/fig20_2.png"></center>
+<p class="margin-large">
+
+図20.2　確率的グラフィカルモデルとして表現された拡散過程。元の画像 \(\mathbf x\) は観測変数であるため、網掛けのノードで示されている。一方、ノイズの影響を受けた画像 \(\mathbf z_1,\cdots, \mathbf z_T\) は潜在変数とみなされる。ノイズ過程は順方向分布 \(q(\mathbf z_t\mid \mathbf z_{t-1})\) によって定義され、エンコーダーと見なすことができる。我々の目標は、このノイズ過程を逆順に展開するモデル \(p(\mathbf z_{t-1}\mid \mathbf  z_t, w)\) を学習することであり、これはデコーダーと見なすことができる。後述するように、条件付き分布 \(q(\mathbf z_{t-1}\mid \mathbf z_t, x)\) は学習手順を定義する上で重要な役割を果たす。
+
+</p>
+<h3>20.1.1 拡散カーネル</h3>
+<p>
+観測データベクトル \(\mathbf x\) を条件とする潜在変数の同時分布は、次のように与えられる。
+
+\[
+q(\mathbf z_1,\cdots,\mathbf z_t\mid \mathbf x)=q(\mathbf z_1\mid \mathbf x)\prod_{\tau=2}^t q(\mathbf z_\tau\mid \mathbf z_{\tau-1}) \tag{20.5}
+\]
+
+ここで中間変数  \(\mathbf z_1,\cdots,\mathbf z_{t-1}\) について周辺化すると、拡散カーネルが得られる。
+
+\[
+q(\mathbf z_t\mid\mathbf x)=\mathcal N(\mathbf z_t\mid\sqrt{\alpha_t}\mathbf x,(1-\alpha_t)\mathbf I) \tag{20.6}
+\]
+
+ここで以下のように定義した。
+
+\[
+\alpha_t = \prod_{\tau=1}^t (1-\beta_t) \tag{20.7}
+\]
+
+それぞれの中間分布は、直接サンプリングできる単純な閉形式のガウス分布式を持っていることがわかる。これは、マルコフ連鎖全体を実行することなく、ランダムに選択された中間項を用いて効率的な確率的勾配降下法を可能にするため、DDPMの訓練に有用である。(20.6)は、次のように書くこともできる。
+
+\[
+\mathbf z_t = \sqrt{\alpha_t}\mathbf x+\sqrt{1-\alpha_t}\boldsymbol{\epsilon}_t \tag{20.8}
+\]
+
+ここでも \(\boldsymbol{\epsilon}_t\sim\mathcal N(\boldsymbol{\epsilon}_t\mid \mathbf 0, \mathbf I)\))。\(\boldsymbol{\epsilon}\) は、マルコフ連鎖のこのステップで追加された増分ノイズではなく、元の画像に追加されたノイズの合計を表すことに注意。
+</p>
+<p>
+　多くのステップを経て、画像はガウスノイズと区別がつかなくなり、\(T\to\infty\) の極限では、
+\[
+q(\mathbf z_T\mid \mathbf x)=\mathcal N(\mathbf z_T\mid \mathbf 0, \mathbf I) \tag{20.9}
+\]
+
+<!--
+and therefore all information about the original image is lost. The choice of coefficients
+\(\sqrt{1-\beta_t}\) and \(\sqrt{\beta_t}\) in (20.3) ensures that once the Markov chain converges to a distribution with zero mean and unit covariance, further
+updates will leave this unchanged.
+--> 
+
+したがって、元の画像に関するすべての情報が失われる。(20.3)における係数\(\sqrt{1-\beta_t}\) と \(\sqrt{\beta_t}\) の選択により、マルコフ連鎖が平均0、共分散1の分布に収束すると、それ以降の更新でもこの分布は変化しない。
+</p>
+<p>
+<!--
+Since the right
+hand side of (20.9) is independent of x, it follows that the marginal distribution of z T is given by -->
+
+　(20.9) の右辺は \(\mathbf x\) に依存しないので、\(\mathbf z_T\) の周辺分布は次のように与えられる。
+\[
+q(\mathbf z_T)=\mathcal N(\mathbf z_T\mid \mathbf 0, \mathbf I) \tag{20.10}
+\]
+
+マルコフ連鎖 (20.4) は一般的に順方向過程と呼ばれ、VAE のエンコーダーに類似しているが、ここでは学習ではなく固定されている点が異なる。ただし、文献でよく使われる用語は、正規化フローに関する文献で一般的に使用される用語とは逆であることに注意が必要である。正規化フローでは、潜在空間からデータ空間への写像が順方向過程とみなされる。
+</p>
+<h3>20.1.2 条件付き分布</h3>
+<p>
+
+<!--
+　Our goal is to learn to undo the noise process, and so it is natural to consider
+the reverse of the conditional distribution \(q(\mathbf z_t\mid \mathbf z_{t-1})\), which we can express using Bayes’ theorem in the form
+-->
+
+　我々の目標はノイズ処理を元に戻す方法を学習することなので、条件付き分布 \(q(\mathbf z_t\mid \mathbf z_{t-1})\) の逆関数を考えるのが自然である。これはベイズの定理を用いて次のように表すことができる。
+\[
+q(\mathbf z_{t-1}\mid \mathbf z_t)=\frac{q(\mathbf z_t\mid \mathbf z_{t-1})q(\mathbf z_{t-1})}{q(\mathbf z_t)} \tag{20.11}
+\]
+
+周辺分布 \(q(\mathbf z_{t-1})\) は次の形式で書くことができる。
+
+\[
+q(\mathbf z_{t-1})=\int q(\mathbf z_{t-1}\mid x)p(\mathbf x)\,d\mathbf x \tag{20.12}
+\]
+
+<!--
+where \(q(\mathbf z_{t-1}\mid \mathbf x)\) is given by the conditional Gaussian (20.6). This distribution is intractable, however, because we must
+integrate over the unknown data density \(p(\mathbf x)\). If we approximate the integration using samples from the training data
+set, we obtain a complicated distribution expressed as a mixture of Gaussians.
+-->
+
+ここで、\(q(\mathbf z_{t-1}\mid \mathbf x)\) は条件付きガウス分布(20.6)で与えられる。しかし、この分布は未知のデータ密度 \(p(\mathbf x)\) にわたって積分しなければならないため、扱いにくい。訓練データセットのサンプルを用いて積分を近似すると、ガウス分布の混合として表現される複雑な分布が得られる。
+</p>
+<p>
+<!--
+　Instead, we consider the conditional version of the reverse distribution, conditioned on the data vector x, defined by
+\(q(\mathbf z_{t-1} \mid \mathbf z_t,\mathbf x)\), Which as we will see shortly turns out to be a simple Gaussian distribution. Intuitively this is reasonable
+since, given a noisy image, it is difficult to guess which lower noise image gave rise to it, whereas if we also know the
+starting image then the problem becomes much easier. We can calculate this conditional distribution using Bayes’
+theorem:
+-->
+
+　代わりに、データベクトル \(\mathbf x\) を条件とする条件付き逆分布を考える。これは、\(q(\mathbf z_{t-1} \mid \mathbf z_t,\mathbf x)\) で定義される。これは、後ほど説明するように、単純なガウス分布になる。直感的には、これは理にかなっている。ノイズの多い画像では、どんなノイズの少ない画像がその画像を生み出したかを推測するのは困難だが、開始画像も分かっていれば、問題ははるかに簡単になる。この条件付き分布は、ベイズの定理を用いて計算できる。
+
+\[
+q(\mathbf z_{t-1}\mid\mathbf z_t,\mathbf x)=\frac{q(\mathbf z_t\mid \mathbf z_{t-1},\mathbf x)q(\mathbf z_{t-1}\mid \mathbf x)}{q(\mathbf z_t\mid\mathbf x)} \tag{20.13}
+\]
+
+ここで、順方向プロセスのマルコフ特性を利用して次のように書く。
+
+\[
+q(\mathbf z_t\mid\mathbf z_{t-1},\mathbf x)=q(\mathbf z_t\mid \mathbf z_{t-1}) \tag{20.14}
+\]
+
+ここで、右辺は(20.4)で与えられる。\(\mathbf z_{t-1}\) の関数として、これは二次形式の指数関数の形をとる。(20.13)の分子の項 \(q(\mathbf z_{t-1}\mid \mathbf x)\) は(20.6)で与えられる拡散カーネルであり、これも \(\mathbf z_{t-1}\) に関する二次形式の指数関数を含む。
+(20.13)式の分母は \(\mathbf z_{t-1}\) の関数として定数なので無視できる。したがって、(20.13)式の右辺はガウス分布の形をとり、「平方完成」の手法を用いてその平均と共分散を求めることができる。
+
+
+
+
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+<p>
+</p>
+    </body>
+</html>
