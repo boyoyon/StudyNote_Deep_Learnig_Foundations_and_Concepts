@@ -78,11 +78,11 @@
         <h1><center>20章</center><center>拡散モデル</center></h1>
 <p>
 
-リッチな生成モデルを構築する強力な方法は、潜在変数 \(\mathbf z\) 上の分布 \(p(\mathbf z)\) を導入し、ディープニューラルネットワークを用いて \(\mathbf z\) をデータ空間 \(\mathbf x\) に変換することであることを見てきた。ニューラルネットワークの一般性により、\(p(\mathbf z)\) は \(\mathbf x\) 上の非常に柔軟な分布族に変換されるため、ガウス分布 \(\mathcal N(\mathbf z|\mathbf 0, \mathbf I)\) などの単純で固定された分布 \(p(\mathbf z)\) を使用すれば十分である。これまでの章では、この枠組みに適合しながら、生成的敵対ネットワーク、変分オートエンコーダ、正規化フローに基づいて、ディープニューラルネットワークの定義と学習に異なるアプローチを採用するいくつかのモデルを検討した。
+リッチな生成モデルを構築する強力な方法は、潜在変数 \(\mathbf z\) 上の分布 \(p(\mathbf z)\) を導入し、ディープニューラルネットワークを用いて \(\mathbf z\) をデータ空間 \(\mathbf x\) に変換することであることを見てきました。ニューラルネットワークの一般性により、\(p(\mathbf z)\) は \(\mathbf x\) 上の非常に柔軟な分布族に変換されるため、ガウス分布 \(\mathcal N(\mathbf z|\mathbf 0, \mathbf I)\) などの単純で固定された分布 \(p(\mathbf z)\) を使用すれば十分です。これまでの章では、この枠組みに適合しながら、生成的敵対ネットワーク、変分オートエンコーダ、正規化フローに基づいて、ディープニューラルネットワークの定義と学習に異なるアプローチを採用するいくつかのモデルを検討しました。
 
 </p><p>
 
-　本章では、この一般的な枠組みにおける4つ目のモデルクラス、拡散モデル、またはノイズ除去拡散確率モデル（DDPM）（Sohl Dickstein et al., 2015; Ho, Jain, and Abbeel, 2020）について説明する。DDPMは、多くのアプリケーションにおいて最先端のモデルとして登場している。この枠組みはより広範な適用範囲を持つが、説明のために画像データのモデルに焦点を当てる。中心的な考え方は、各トレーニング画像を複数段階のノイズ処理を用いて破壊し、ガウス分布のサンプルに変換することである。これは図20.1に示されている。次に、ディープニューラルネットワークをこのプロセスを反転するようにトレーニングする。トレーニングが完了すると、ネットワークはガウス分布のサンプルを入力として新しい画像を生成できるようになる。
+　本章では、この一般的な枠組みにおける4つ目のモデルクラス、拡散モデル、またはノイズ除去拡散確率モデル（DDPM）（Sohl Dickstein et al., 2015; Ho, Jain, and Abbeel, 2020）について説明します。DDPMは、多くのアプリケーションにおいて最先端のモデルとして登場しています。この枠組みはより広範な適用範囲を持ちますが、説明のために画像データのモデルに焦点を当てます。中心的な考え方は、各トレーニング画像を複数段階のノイズ処理を用いて破壊し、ガウス分布のサンプルに変換することです。これは図20.1に示されています。次に、ディープニューラルネットワークをこのプロセスを反転するようにトレーニングします。トレーニングが完了すると、ネットワークはガウス分布のサンプルを入力として新しい画像を生成できるようになります。
 
 </p>
 <center><img src="images/fig20_1.png"></center>
@@ -93,76 +93,76 @@
 </p>
 <p>
 
-　拡散モデルは、エンコーダ分布が固定され、ノイズ過程によって定義され、生成分布のみが学習される階層的変分オートエンコーダの一種と見なすことができる (Luo, 2022)。拡散モデルは学習が容易で、並列ハードウェア上でのスケーリングが容易であり、敵対的学習の課題や不安定性を回避しながら、生成敵対ネットワークと同等かそれ以上の品質の結果を生成する。ただし、デコーダネットワークを複数回通過する必要があるため、新しいサンプルを生成するには計算コストが高くなる可能性がある (Dhariwal and Nichol, 2021)。
+　拡散モデルは、エンコーダ分布が固定され、ノイズ過程によって定義され、生成分布のみが学習される階層的変分オートエンコーダの一種と見なすことができます (Luo, 2022)。拡散モデルは学習が容易で、並列ハードウェア上でのスケーリングが容易であり、敵対的学習の課題や不安定性を回避しながら、生成敵対ネットワークと同等かそれ以上の品質の結果を生成します。ただし、デコーダネットワークを複数回通過する必要があるため、新しいサンプルを生成するには計算コストが高くなる可能性があります (Dhariwal and Nichol, 2021)。
 
 </p>
 <h2>20.1 順方向エンコーダー</h2>
 <p>
 
-　訓練セットから画像を取り出し、これを \(\mathbf x\) と表記し、各ピクセルごとに独立にガウスノイズとブレンドして、次のように定義されるノイズ劣化画像 \(\mathbf z_1\) を作成する。
+　訓練セットから画像を取り出し、これを \(\mathbf x\) と表記し、各ピクセルごとに独立にガウスノイズとブレンドして、次のように定義されるノイズ劣化画像 \(\mathbf z_1\) を作成します。
 
 \[
 \mathbf z_1=\sqrt{1-\beta_1}\mathbf x+\sqrt{\beta_1}\boldsymbol{\epsilon}_1 \tag{20.1}
 \]
 
-ここで、\(\boldsymbol{\epsilon}_1\sim \mathcal N(\boldsymbol{\epsilon}_1\mid \mathbf 0, \mathbf I)\) および \(\beta_1\lt 1\) はノイズ分布の分散である。(20.1) および (20.3) における係数 \(\sqrt{1-\beta_1}\) および \(\sqrt{\beta_1}\)  の選択は、\(z_t\) の分布の平均が \(z_{t-1}\) の平均よりもゼロに近くなること、および  \(z_t\) の分散が \(z_{t-1}\) の分散よりも単位行列に近くなることを保証する。変換 (20.1) は次のように書くことができる。
+ここで、\(\boldsymbol{\epsilon}_1\sim \mathcal N(\boldsymbol{\epsilon}_1| \mathbf 0, \mathbf I)\) および \(\beta_1\lt 1\) はノイズ分布の分散です。(20.1) および (20.3) における係数 \(\sqrt{1-\beta_1}\) および \(\sqrt{\beta_1}\)  の選択は、\(\mathbf z_t\) の分布の平均が \(\mathbf z_{t-1}\) の平均よりもゼロに近くなること、および  \(\mathbf z_t\) の分散が \(\mathbf z_{t-1}\) の分散よりも単位行列に近くなることを保証します。変換 (20.1) は次のように書くことができます。
 
 \[
-q(\mathbf z_1\mid \mathbf x)=\mathcal N(\mathbf z_1\mid \sqrt{1-\beta_1}\mathbf x, \beta_1\mathbf I)  \tag{20.2}
+q(\mathbf z_1| \mathbf x)=\mathcal N(\mathbf z_1| \sqrt{1-\beta_1}\mathbf x, \beta_1\mathbf I)  \tag{20.2}
 \]
 
-次に、このプロセスを独立したガウスノイズステップを追加しながら繰り返し、ノイズが徐々に増加する画像列 \(\mathbf z_2, ..., \mathbf z_T\) を得る。拡散モデルに関する文献では、これらの潜在変数は \(\mathbf x_1, ..., \mathbf x_T\) と表記され、観測変数は \(\mathbf x_0\) と表記される場合があることに注意。本書の他の部分との一貫性を保つため、潜在変数には \(\mathbf z\)、観測変数には \(\mathbf x\) という表記を用いる。各連続画像は次のように表される。
+次に、このプロセスを独立したガウスノイズステップを追加しながら繰り返し、ノイズが徐々に増加する画像列 \(\mathbf z_2, ..., \mathbf z_T\) を得ます。拡散モデルに関する文献では、これらの潜在変数は \(\mathbf x_1, ..., \mathbf x_T\) と表記され、観測変数は \(\mathbf x_0\) と表記される場合があることに注意してください。本書の他の部分との一貫性を保つため、潜在変数には \(\mathbf z\)、観測変数には \(\mathbf x\) という表記を用います。各連続画像は次のように表されます。
 
 \[
 \mathbf z_t =\sqrt{1-\beta_t}\mathbf z_{t-1}+\sqrt{\beta_t}\boldsymbol{\epsilon}_t \tag{20.3}
 \]
 
-ここで \(\boldsymbol{\epsilon}_t\sim \mathcal N(\boldsymbol{\epsilon}_t\mid \mathbf 0, \mathbf I)\)。繰り返しになるが、(20.3)も以下の形式で書くことができる。
+ここで \(\boldsymbol{\epsilon}_t\sim \mathcal N(\boldsymbol{\epsilon}_t| \mathbf 0, \mathbf I)\)。繰り返しになりますが、(20.3)も以下の形式で書くことができます。
 
 \[
-q(\mathbf z_t\mid \mathbf z_{t-1})=\mathcal N(\mathbf z_t\mid \sqrt{1-\beta_t}\mathbf z_{t-1},\beta_t\mathbf I) \tag{20.4}
+q(\mathbf z_t| \mathbf z_{t-1})=\mathcal N(\mathbf z_t| \sqrt{1-\beta_t}\mathbf z_{t-1},\beta_t\mathbf I) \tag{20.4}
 \]
 
-条件付き分布の列 (20.4) はマルコフ連鎖を形成し、図20.2 に示すように確率的グラフィカルモデルとして表現できる。分散パラメータ \(\beta_t\in (0,1)\) の値は手動で設定され、通常は、所定のスケジュールに従って連鎖を通じて分散値が増加するように選択される (\(\beta_1 \lt \beta_2 \lt \cdots \lt \beta_T\))。
+条件付き分布の列 (20.4) はマルコフ連鎖を形成し、図20.2 に示すように確率的グラフィカルモデルとして表現できます。分散パラメータ \(\beta_t\in (0,1)\) の値は手動で設定され、通常は、所定のスケジュールに従って連鎖を通じて分散値が増加するように選択されます (\(\beta_1 \lt \beta_2 \lt \cdots \lt \beta_T\))。
 </p>
 <center><img src="images/fig20_2.png"></center>
 <p class="margin-large">
 
-図20.2　確率的グラフィカルモデルとして表現された拡散過程。元の画像 \(\mathbf x\) は観測変数であるため、網掛けのノードで示されている。一方、ノイズの影響を受けた画像 \(\mathbf z_1,\cdots, \mathbf z_T\) は潜在変数とみなされる。ノイズ過程は順方向分布 \(q(\mathbf z_t\mid \mathbf z_{t-1})\) によって定義され、エンコーダーと見なすことができる。我々の目標は、このノイズ過程を逆順に展開するモデル \(p(\mathbf z_{t-1}\mid \mathbf  z_t, w)\) を学習することであり、これはデコーダーと見なすことができる。後述するように、条件付き分布 \(q(\mathbf z_{t-1}\mid \mathbf z_t, x)\) は学習手順を定義する上で重要な役割を果たす。
+図20.2　確率的グラフィカルモデルとして表現された拡散過程。元の画像 \(\mathbf x\) は観測変数であるため、網掛けのノードで示されている。一方、ノイズの影響を受けた画像 \(\mathbf z_1,\cdots, \mathbf z_T\) は潜在変数とみなされる。ノイズ過程は順方向分布 \(q(\mathbf z_t| \mathbf z_{t-1})\) によって定義され、エンコーダーと見なすことができる。我々の目標は、このノイズ過程を逆順に展開するモデル \(p(\mathbf z_{t-1}| \mathbf  z_t, \mathbf w)\) を学習することであり、これはデコーダーと見なすことができる。後述するように、条件付き分布 \(q(\mathbf z_{t-1}| \mathbf z_t, x)\) は学習手順を定義する上で重要な役割を果たす。
 
 </p>
 <h3>20.1.1 拡散カーネル</h3>
 <p>
-観測データベクトル \(\mathbf x\) を条件とする潜在変数の同時分布は、次のように与えられる。
+観測データベクトル \(\mathbf x\) を条件とする潜在変数の同時分布は、次のように与えられます。
 
 \[
-q(\mathbf z_1,\cdots,\mathbf z_t\mid \mathbf x)=q(\mathbf z_1\mid \mathbf x)\prod_{\tau=2}^t q(\mathbf z_\tau\mid \mathbf z_{\tau-1}) \tag{20.5}
+q(\mathbf z_1,\cdots,\mathbf z_t| \mathbf x)=q(\mathbf z_1| \mathbf x)\prod_{\tau=2}^t q(\mathbf z_\tau| \mathbf z_{\tau-1}) \tag{20.5}
 \]
 
-ここで中間変数  \(\mathbf z_1,\cdots,\mathbf z_{t-1}\) について周辺化すると、拡散カーネルが得られる。
+ここで中間変数  \(\mathbf z_1,\cdots,\mathbf z_{t-1}\) について周辺化すると、拡散カーネルが得られます。
 
 \[
-q(\mathbf z_t\mid\mathbf x)=\mathcal N(\mathbf z_t\mid\sqrt{\alpha_t}\mathbf x,(1-\alpha_t)\mathbf I) \tag{20.6}
+q(\mathbf z_t|\mathbf x)=\mathcal N(\mathbf z_t|\sqrt{\alpha_t}\mathbf x,(1-\alpha_t)\mathbf I) \tag{20.6}
 \]
 
-ここで以下のように定義した。
+ここで以下のように定義しました。
 
 \[
 \alpha_t = \prod_{\tau=1}^t (1-\beta_t) \tag{20.7}
 \]
 
-それぞれの中間分布は、直接サンプリングできる単純な閉形式のガウス分布式を持っていることがわかる。これは、マルコフ連鎖全体を実行することなく、ランダムに選択された中間項を用いて効率的な確率的勾配降下法を可能にするため、DDPMの訓練に有用である。(20.6)は、次のように書くこともできる。
+それぞれの中間分布は、直接サンプリングできる単純な閉形式のガウス分布式を持っていることがわかります。これは、マルコフ連鎖全体を実行することなく、ランダムに選択された中間項を用いて効率的な確率的勾配降下法を可能にするため、DDPMの訓練に有用です。(20.6)は、次のように書くこともできます。
 
 \[
 \mathbf z_t = \sqrt{\alpha_t}\mathbf x+\sqrt{1-\alpha_t}\boldsymbol{\epsilon}_t \tag{20.8}
 \]
 
-ここでも \(\boldsymbol{\epsilon}_t\sim\mathcal N(\boldsymbol{\epsilon}_t\mid \mathbf 0, \mathbf I)\))。\(\boldsymbol{\epsilon}\) は、マルコフ連鎖のこのステップで追加された増分ノイズではなく、元の画像に追加されたノイズの合計を表すことに注意。
+ここでも \(\boldsymbol{\epsilon}_t\sim\mathcal N(\boldsymbol{\epsilon}_t| \mathbf 0, \mathbf I)\))。\(\boldsymbol{\epsilon}\) は、マルコフ連鎖のこのステップで追加された増分ノイズではなく、元の画像に追加されたノイズの合計を表すことに注意してください。
 </p>
 <p>
 　多くのステップを経て、画像はガウスノイズと区別がつかなくなり、\(T\to\infty\) の極限では、
 \[
-q(\mathbf z_T\mid \mathbf x)=\mathcal N(\mathbf z_T\mid \mathbf 0, \mathbf I) \tag{20.9}
+q(\mathbf z_T| \mathbf x)=\mathcal N(\mathbf z_T| \mathbf 0, \mathbf I) \tag{20.9}
 \]
 
 <!--
@@ -171,214 +171,518 @@ and therefore all information about the original image is lost. The choice of co
 updates will leave this unchanged.
 --> 
 
-したがって、元の画像に関するすべての情報が失われる。(20.3)における係数\(\sqrt{1-\beta_t}\) と \(\sqrt{\beta_t}\) の選択により、マルコフ連鎖が平均0、共分散1の分布に収束すると、それ以降の更新でもこの分布は変化しない。
+したがって、元の画像に関するすべての情報が失われます。(20.3)における係数 \(\sqrt{1-\beta_t}\) と \(\sqrt{\beta_t}\) の選択により、マルコフ連鎖が平均0、共分散1の分布に収束すると、それ以降の更新でもこの分布は変化しません。
 </p>
 <p>
 <!--
 Since the right
 hand side of (20.9) is independent of x, it follows that the marginal distribution of z T is given by -->
 
-　(20.9) の右辺は \(\mathbf x\) に依存しないので、\(\mathbf z_T\) の周辺分布は次のように与えられる。
+　(20.9) の右辺は \(\mathbf x\) に依存しないので、\(\mathbf z_T\) の周辺分布は次のように与えられます。
 \[
-q(\mathbf z_T)=\mathcal N(\mathbf z_T\mid \mathbf 0, \mathbf I) \tag{20.10}
+q(\mathbf z_T)=\mathcal N(\mathbf z_T| \mathbf 0, \mathbf I) \tag{20.10}
 \]
 
-マルコフ連鎖 (20.4) は一般的に順方向過程と呼ばれ、VAE のエンコーダーに類似しているが、ここでは学習ではなく固定されている点が異なる。ただし、文献でよく使われる用語は、正規化フローに関する文献で一般的に使用される用語とは逆であることに注意が必要である。正規化フローでは、潜在空間からデータ空間への写像が順方向過程とみなされる。
+マルコフ連鎖 (20.4) は一般的に順方向過程と呼ばれ、VAE のエンコーダーに類似していますが、ここでは学習ではなく固定されている点が異なります。ただし、文献でよく使われる用語は、正規化フローに関する文献で一般的に使用される用語とは逆であることに注意が必要です。正規化フローでは、潜在空間からデータ空間への写像が順方向過程とみなされます。
 </p>
 <h3>20.1.2 条件付き分布</h3>
 <p>
 
 <!--
 　Our goal is to learn to undo the noise process, and so it is natural to consider
-the reverse of the conditional distribution \(q(\mathbf z_t\mid \mathbf z_{t-1})\), which we can express using Bayes’ theorem in the form
+the reverse of the conditional distribution \(q(\mathbf z_t| \mathbf z_{t-1})\), which we can express using Bayes’ theorem in the form
 -->
 
-　我々の目標はノイズ処理を元に戻す方法を学習することなので、条件付き分布 \(q(\mathbf z_t\mid \mathbf z_{t-1})\) の逆関数を考えるのが自然である。これはベイズの定理を用いて次のように表すことができる。
+　我々の目標はノイズ処理を元に戻す方法を学習することなので、条件付き分布 \(q(\mathbf z_t| \mathbf z_{t-1})\) の逆関数を考えるのが自然です。これはベイズの定理を用いて次のように表すことができます。
 \[
-q(\mathbf z_{t-1}\mid \mathbf z_t)=\frac{q(\mathbf z_t\mid \mathbf z_{t-1})q(\mathbf z_{t-1})}{q(\mathbf z_t)} \tag{20.11}
+q(\mathbf z_{t-1}| \mathbf z_t)=\frac{q(\mathbf z_t| \mathbf z_{t-1})q(\mathbf z_{t-1})}{q(\mathbf z_t)} \tag{20.11}
 \]
 
-周辺分布 \(q(\mathbf z_{t-1})\) は次の形式で書くことができる。
+周辺分布 \(q(\mathbf z_{t-1})\) は次の形式で書くことができます。
 
 \[
-q(\mathbf z_{t-1})=\int q(\mathbf z_{t-1}\mid x)p(\mathbf x)\,d\mathbf x \tag{20.12}
+q(\mathbf z_{t-1})=\int q(\mathbf z_{t-1}|\mathbf x)p(\mathbf x)\,d\mathbf x \tag{20.12}
 \]
 
 <!--
-where \(q(\mathbf z_{t-1}\mid \mathbf x)\) is given by the conditional Gaussian (20.6). This distribution is intractable, however, because we must
+where \(q(\mathbf z_{t-1}| \mathbf x)\) is given by the conditional Gaussian (20.6). This distribution is intractable, however, because we must
 integrate over the unknown data density \(p(\mathbf x)\). If we approximate the integration using samples from the training data
 set, we obtain a complicated distribution expressed as a mixture of Gaussians.
 -->
 
-ここで、\(q(\mathbf z_{t-1}\mid \mathbf x)\) は条件付きガウス分布(20.6)で与えられる。しかし、この分布は未知のデータ密度 \(p(\mathbf x)\) にわたって積分しなければならないため、扱いにくい。訓練データセットのサンプルを用いて積分を近似すると、ガウス分布の混合として表現される複雑な分布が得られる。
+ここで、\(q(\mathbf z_{t-1}| \mathbf x)\) は条件付きガウス分布(20.6)で与えられます。しかし、この分布は未知のデータ密度 \(p(\mathbf x)\) にわたって積分しなければならないため、扱いにくいです。訓練データセットのサンプルを用いて積分を近似すると、ガウス分布の混合として表現される複雑な分布が得られます。
 </p>
 <p>
 <!--
 　Instead, we consider the conditional version of the reverse distribution, conditioned on the data vector x, defined by
-\(q(\mathbf z_{t-1} \mid \mathbf z_t,\mathbf x)\), Which as we will see shortly turns out to be a simple Gaussian distribution. Intuitively this is reasonable
+\(q(\mathbf z_{t-1} | \mathbf z_t,\mathbf x)\), Which as we will see shortly turns out to be a simple Gaussian distribution. Intuitively this is reasonable
 since, given a noisy image, it is difficult to guess which lower noise image gave rise to it, whereas if we also know the
 starting image then the problem becomes much easier. We can calculate this conditional distribution using Bayes’
 theorem:
 -->
 
-　代わりに、データベクトル \(\mathbf x\) を条件とする条件付き逆分布を考える。これは、\(q(\mathbf z_{t-1} \mid \mathbf z_t,\mathbf x)\) で定義される。これは、後ほど説明するように、単純なガウス分布になる。直感的には、これは理にかなっている。ノイズの多い画像では、どんなノイズの少ない画像がその画像を生み出したかを推測するのは困難だが、開始画像も分かっていれば、問題ははるかに簡単になる。この条件付き分布は、ベイズの定理を用いて計算できる。
+　代わりに、データベクトル \(\mathbf x\) を条件とする条件付き逆分布を考えます。これは、\(q(\mathbf z_{t-1} | \mathbf z_t,\mathbf x)\) で定義されます。これは、後ほど説明するように、単純なガウス分布になります。直感的には、これは理にかなっています。ノイズの多い画像では、どんなノイズの少ない画像がその画像を生み出したかを推測するのは困難ですが、開始画像も分かっていれば、問題ははるかに簡単になります。この条件付き分布は、ベイズの定理を用いて計算できます。
 
 \[
-q(\mathbf z_{t-1}\mid\mathbf z_t,\mathbf x)=\frac{q(\mathbf z_t\mid \mathbf z_{t-1},\mathbf x)q(\mathbf z_{t-1}\mid \mathbf x)}{q(\mathbf z_t\mid\mathbf x)} \tag{20.13}
+q(\mathbf z_{t-1}|\mathbf z_t,\mathbf x)=\frac{q(\mathbf z_t| \mathbf z_{t-1},\mathbf x)q(\mathbf z_{t-1}| \mathbf x)}{q(\mathbf z_t|\mathbf x)} \tag{20.13}
 \]
 
-ここで、順方向プロセスのマルコフ特性を利用して次のように書く。
+ここで、順方向プロセスのマルコフ特性を利用して次のように書きます。
 
 \[
-q(\mathbf z_t\mid\mathbf z_{t-1},\mathbf x)=q(\mathbf z_t\mid \mathbf z_{t-1}) \tag{20.14}
+q(\mathbf z_t|\mathbf z_{t-1},\mathbf x)=q(\mathbf z_t| \mathbf z_{t-1}) \tag{20.14}
 \]
-
-ここで、右辺は(20.4)で与えられる。\(\mathbf z_{t-1}\) の関数として、これは二次形式の指数関数の形をとる。(20.13)の分子の項 \(q(\mathbf z_{t-1}\mid \mathbf x)\) は(20.6)で与えられる拡散カーネルであり、これも \(\mathbf z_{t-1}\) に関する二次形式の指数関数を含む。
-(20.13)式の分母は \(\mathbf z_{t-1}\) の関数として定数なので無視できる。したがって、(20.13)式の右辺はガウス分布の形をとり、「平方完成」の手法を用いてその平均と共分散を求めることができる。
-
-
-
-
+ここで、右辺は(20.4)で与えられます。\(\mathbf z_{t-1}\) の関数として、これは二次形式の指数関数の形をとります。(20.13)の分子の項 \(q(\mathbf z_{t-1}| \mathbf x)\) は(20.6)で与えられる拡散カーネルであり、これも \(\mathbf z_{t-1}\) に関する二次形式の指数関数を含みます。
+(20.13)式の分母は \(\mathbf z_{t-1}\) の関数として定数なので無視できます。したがって、(20.13)式の右辺はガウス分布の形をとり、「平方完成」の手法を用いてその平均と共分散を求めることができます。
+\[
+q(\mathbf z_{t-1}|\mathbf z_t,\mathbf x)=\mathcal N(\mathbf z_{t-1}|\mathbf m_t(\mathbf x,\mathbf z_t),\sigma_t^2\mathbf I) \tag{20.15}
+\]
+ここで
+\[
+\begin{align}
+\mathbf m_t(\mathbf x,\mathbf z_t) &=\frac{(1-\alpha_{t-1})\sqrt{1-\beta_t}\mathbf z_t+\sqrt{\alpha_{t-1}}\beta_t\mathbf x}{1-\alpha_t} \tag{20.16} \\
+\\
+\sigma_t^2 &=\frac{\beta_t(1-\alpha_{t-1})}{1-\alpha_t} \tag{20.17}
+\end{align}
+\]
+それと(20.7) を使用しました。
+</p>
+<h3>20.2 逆方向デコード</h3>
+<p>
+順方向エンコーダモデルは一連のガウス条件付き分布 \(q(\mathbf z_t|\mathbf z_{t-1})\) によって定義されますが、これを反転すると、処理が困難な分布 \(q(\mathbf z_{t-1}|\mathbf z_t)\) が直接導かれることがわかりました。開始ベクトル \(\mathbf x\) のすべての可能な値を積分し、その分布がモデル化したい未知のデータ分布 \(p(\mathbf x)\) になります。代わりに、ディープニューラルネットワークによって支配される分布 \(p(\mathbf z_{t-1}|\mathbf z_t, \mathbf w)\) を使用して、逆分布の近似を学習します。ここで、\(\mathbf w\) はネットワークの重みとバイアスを表します。この逆のステップは、変分オートエンコーダのデコーダに似ており、図20.2 に示されています。ネットワークがトレーニングされると、\(\mathbf z_T\) にわたる単純なガウス分布からサンプリングし、トレーニングされたネットワークを繰り返し適用することで、一連の逆サンプリングステップを通じてデータ分布 \(p(\mathbf x)\) からのサンプルに変換できます。
+</p>
+<p>
+直観的には、分散を小さくして \(β_t \ll 1\) にすると、ステップ間の潜在ベクトルの変化は比較的小さくなり、したがって逆変換の学習が容易になるはずです。より具体的には、\(β_t \ll 1\) の場合、分布 \(q(\mathbf z_{t-1}|\mathbf z_t)\) は \(\mathbf z_{t-1}\) にわたるほぼガウス分布になります。右辺は \(q(\mathbf z_t|\mathbf z_{t-1})\) および \(q(\mathbf z_{t-1})\) を通じて \(\mathbf z_{t-1}\) に依存するため、これは (20.11) からわかります。\(q(\mathbf z_t|\mathbf z_{t-1})\) が十分に狭いガウス分布である場合、\(q(\mathbf z_{t-1})\) は、\(q(\mathbf z_t|\mathbf z_{t-1})\) が有意な質量を持つ領域にわたってわずかしか変化しないため、\(q(\mathbf z_{t-1}|\mathbf z_t)\) もほぼガウス分布になります。この直感は、図20.3 と20.4 に示すような簡単な例を使用して確認できます。ただし、各ステップの分散が小さいため、順方向ノイズ処理から得られる最終的な潜在変数zT の分布が依然としてガウスに近いことを保証するには、多数のステップを使用する必要があり、これにより、新しいサンプルを生成するコストが増加します。実際には、\(T\) は数千になる場合があります。
+</p>
+<center><img src="images/fig20_3.png"></center>
+<p class="margin-large">
+図20.3　スカラー変数に対するベイズの定理(20.13)を使用した逆分布 \(q(\mathbf z_{t-1}|\mathbf z_t)\) の評価の図。右側のプロットの赤い曲線は、3つのガウス分布の混合を使用して示された周辺分布 \(q(\mathbf z_{t-1})\)を示しています。一方、左側のプロットは、ガウス順方向ノイズプロセス \(q(\mathbf z_t|\mathbf z_{t-1})\) を、\(\mathbf z_{t-1}\)を中心とした \(\mathbf z_t\) 上の分布として示しています。これらを掛け合わせて正規化すると、特定の \(\mathbf z_t\) の選択に対して青い曲線で示される分布 \(q(\mathbf z_{t-1}|\mathbf z_t)\) が得られます。 左側の分布は比較的広く、大きな分散に対応するため、分布 \(q(\mathbf z_{t-1}|\mathbf z_t)\) は複雑な多峰構造を持っています。
+</p>
+<center><img src="images/fig20_4.png"></center>
+<p class="margin-large">
+図20.4　図20.3と同様ですが、左側のプロットのガウス分布 \(q(\mathbf z_t|\mathbf z_{t-1})\) の分散 \(β_t\) ははるかに小さくなります。右側のプロットで青色で示されている対応する分布 \(q(\mathbf z_{t-1}|\mathbf z_t)\) はガウス分布に近く、\(q(\mathbf z_t|\mathbf z_{t-1})\) と同様の分散を持っていることがわかります。
+</p>
+<p>
+\(\mathbf z_{t-1}\) の関数として点 \(\mathbf z_t\) の周りで \(\ln q(\mathbf z_{t-1}|\mathbf z_t)\) のテイラー級数展開を行うことにより、\(q(\mathbf z_{t-1}|\mathbf z_t)\) がほぼガウス分布になることがより正式にわかります。これは、分散が小さい場合、逆分布 \(q(\mathbf z_t|\mathbf z_{t-1})\) が順方向ノイズプロセス \(q(\mathbf z_{t-1}|\mathbf z_t)\) の共分散 \(β_t \mathbf I\) に近い共分散を持つことも示しています。したがって、次の形式のガウス分布を使用して逆のプロセスをモデル化します。
+\[
+p(\mathbf z_{t-1}|\mathbf z_t,\mathbf w)=\mathcal N(\mathbf z_{t-1}|\boldsymbol{\mu}(\mathbf z_t,\mathbf w,t),\beta_t\mathbf I) \tag{20.18}
+\]
+</p>
+<p>
+ここで、\(\mathbf μ(\mathbf z_t, \mathbf w, t)\) はパラメータ \(\mathbf w\) の集合によって制御されるディープニューラルネットワークです。ネットワークは、連鎖の異なるステップにわたる分散 \(β_t\) の変動を考慮できるように、ステップインデックス \(t\) を入力として明示的に取得することに注意してください。これにより、ステップごとに個別のネットワークを学習する必要がなく、単一のネットワークを使用してマルコフ連鎖のすべてのステップを反転することができます。\(\mathbf z_t\) 近傍の分布 \(q(\mathbf z_{t-1})\) の曲率を考慮してネットワークにさらに出力を組み込むことで、ノイズ除去プロセスの共分散を学習することも可能です(Nichol and Dhariwal、2021)。出力が入力と同じ次元を持つ場合、\(\mathbf μ(\mathbf z_t, \mathbf w, t)\) のモデル化に使用されるニューラルネットワークのアーキテクチャの選択にはかなりの柔軟性があります。この制限を考慮すると、画像処理アプリケーションにはU-netアーキテクチャが一般的に選択されます。
+</p>
+<p>
+全体的な逆ノイズ除去プロセスは、次のようなマルコフ連鎖の形をとります。
+\[
+p(\mathbf x,\mathbf z_1,\cdots,\mathbf z_T|\mathbf w)=p(\mathbf z_T)\left\{\prod_{t=2}^T p(\mathbf z_{t-1}|\mathbf z_t,\mathbf w)\right\}p(\mathbf x|\mathbf z_1,\mathbf w) \tag{20.19}
+\]
+ここで、\(p(\mathbf z_T)\) は \(q(\mathbf z_T)\) の分布と同じであると仮定され、したがって \(\mathcal N(\mathbf z_T|\mathbf 0,\mathbf I)\) で与えられます。モデルが学習されると、サンプリングは簡単です。まず単純なガウス分布 \(p(\mathbf z_T)\) からサンプリングし、次に各条件付き分布 \(p(\mathbf z_{t-1}|\mathbf z_t, \mathbf w)\) から順にサンプリングし、最後に \(p(\mathbf x|\mathbf z_1,\mathbf w)\) からサンプリングして、データ空間内のサンプル \(\mathbf x\) を取得します。
+</p>
+<h3>20.2.1 デコーダーのトレーニング</h3>
+<p>
+次に、ニューラルネットワークをトレーニングするための目的関数を決定する必要があります。明らかな選択は尤度関数です。これはデータ点 \(\mathbf x\) に対して次のように与えられます。
+\[
+p(\mathbf x|\mathbf w)=\int\cdots\int p(\mathbf x,\mathbf z_1,\cdots,\mathbf z_T|\mathbf w)\,d\mathbf z_1\,\cdots\,d\mathbf z_T \tag{20.20}
+\]
+ここで、\(p(\mathbf x, \mathbf z_1,..., \mathbf z_T|\mathbf w)\) は(20.19)によって定義されます。これは、潜在変数が \(\mathbf z = (\mathbf z_1, ..., \mathbf z_T)\) で構成され、観測変数が \(\mathbf x\) である一般的な潜在変数モデル(16.81)のインスタンスです。正規化フローの場合と同様に、潜在変数はすべてデータ空間と同じ次元を持ちますが、変分オートエンコーダーや敵対的生成ネットワークの場合はそうではないことに注意してください。(20.20)から、尤度には、ノイズサンプルが観察されたデータポイントを生み出す可能性のあるすべての可能な軌跡にわたる統合が含まれることがわかります。(20.20)の積分は、非常に複雑なニューラルネットワーク関数にわたる積分を伴うため、扱いが困難です。
+</p>
+<h3>20.2.2 エビデンス下界(Evidence lower bound)</h3>
+<p>
+正確な尤度は扱いが難しいため、変分オートエンコーダで使用されるものと同様のアプローチを採用し、エビデンス下界(ELBO)と呼ばれる対数尤度の下界を最大化できます。これをここでは拡散モデルのコンテキストで再導出します。分布 \(q(\mathbf z)\) をどのように選択しても、次の関係が常に成り立ちます。
+\[
+\ln p(\mathbf x|\mathbf w)=\mathcal L(\mathbf w)+KL(q(\mathbf z)||p(\mathbf z|\mathbf x,\mathbf w)) \tag{20.21}
+\]
+ここで、\(\mathcal L\) はエビデンス下界であり、変分下界とも呼ばれ、次の式で与えられます。
+\[
+\mathcal L(\mathbf w)=\int q(\mathbf z)\ln\left\{\frac{p(\mathbf x,\mathbf z|\mathbf w)}{q(\mathbf z)}\right\}d\mathbf z \tag{20.22}
+\]
+2つの確率密度 \(f(\mathbf z)\) と \(g(\mathbf z)\) の間のカルバック・ライブラーダイバージェンス \(KL(f||g)\) は次のように定義されます。
+\[
+KL(f(\mathbf z)||g(\mathbf z))=-\int f(\mathbf z)\ln\left\{\frac{g(\mathbf z)}{f(\mathbf z)}\right\}d\mathbf z \tag{20.23}
+\]
+関係(20.21)を検証するには、まず、確率の乗法定理から次のことに注意してください。
+\[
+p(\mathbf x,\mathbf z|\mathbf w)=p(\mathbf z|\mathbf x,\mathbf w)p(\mathbf x|\mathbf w) \tag{20.24}
+\]
+(20.24)を(20.22)に代入し、(20.23)を利用すると、(20.21)が得られます。カルバック・ライブラーダイバージェンスには \(KL (･||･) ≥ 0\) という特性があり、そこから次のことがわかります。
+\[
+\ln p(\mathbf x|\mathbf w)\geq\mathcal L(\mathbf w) \tag{20.25}
+\]
+対数尤度関数は扱いにくいため、下界 \(\mathcal L(\mathbf w)\)を最大化することでニューラルネットワークをトレーニングします。
+</p>
+<p>
+拡散モデルの下界の明示的な形式を導出するために、\(q(\mathbf z)\) の形式を自由に選択できます。ただし、それが有効な確率分布であること、つまり非負で 1 に積分されることが必要です。ELBO などの多くのアプリケーションでは、可変パラメータを持つ \(q(\mathbf z)\) の形式を選択し、しばしば深層ニューラルネットワークの形式で表現します。そして、それらのパラメータについて ELBO を最大化し、分布 \(p(\mathbf x, \mathbf z|\mathbf w)\) のパラメータについても最大尤度に近づけます。しかし、拡散モデルでは、\(q(\mathbf z)\) をマルコフ連鎖（20.5）で定義される固定分布 \(q(\mathbf z_1、…、\mathbf z_T|\mathbf x)\) で与えることを選択し、逆マルコフ連鎖のモデル \(p(\mathbf x, \mathbf z_1,…,\mathbf z_T|\mathbf w)\) のパラメータのみが調整可能です。\(q(\mathbf z)\) の選択の柔軟性を利用して、\(\mathbf x\) に依存する形式を選択していることに注意してください。
+</p>
+<p>
+したがって、(20.5)を使用して(20.21)の \(q(\mathbf z_1, ..., \mathbf z_T|\mathbf x)\) を代入し、同様に(20.19)を使用して\(p(\mathbf x, \mathbf z_1, ...,\mathbf  z_T|\mathbf w)\) を代入して次の形式で ELBOを書くことができます。
+\[
+\begin{align}
+\mathcal L(\mathbf w) &=\mathbb E_q\left[\ln\frac{p(\mathbf z_T)\left\{\prod_{t=2}^T p(\mathbf z_{t-1}|\mathbf z_t,\mathbf w)\right\}p(\mathbf x|\mathbf z_1,\mathbf w)}{q(\mathbf z_1|\mathbf x)\prod_{t=2}^T q(\mathbf z_t|\mathbf z_{t-1},\mathbf x)}\right] \\
+\\
+&=\mathbb E_q\left[\ln p(\mathbf z_T)+\sum_{t=2}^T \ln\frac{p(\mathbf z_{t-1}|\mathbf z_t,\mathbf w)}{q(\mathbf z_t|\mathbf z_{t-1},\mathbf x)}-\ln q(\mathbf z_1|\mathbf x)+\ln p(\mathbf x|\mathbf z_1,\mathbf w) \right] \tag{20.26} 
+\end{align}
+\]
+ここで以下のように定義しました。
+\[
+\mathbb E_q[\cdot]\equiv\int\cdots\int q(\mathbf z_1|\mathbf x)\prod_{t=2}^T q(\mathbf z_t|\mathbf z_{t-1})[\cdot]\,d\mathbf z_1\cdots d\mathbf z_T \tag{20.27}
+\]
+(20.26)の右辺の最初の項 \(\ln p(\mathbf z)\) は、まさに固定分布 \(\mathcal N(\mathbf z_T|\mathbf 0, \mathbf I)\) です。これにはトレーニング可能なパラメータがないため、固定の加法定数を表すため、ELBOから省略できます。同様に、3番目の項 \(-\ln q(\mathbf z_1|\mathbf x)\) は \(\mathbf w\) から独立しているため、やはり省略できます。
+</p>
+<p>
+(20.26)の右側の4番目の項は、変分オートエンコーダからの再構成項に対応します。これは、(20.2)で定義される \(\mathbf z_1\) 上の分布からサンプルを抽出することによって得られるモンテカルロ推定によって期待値 \(\mathbb E_q[･]\) を近似することによって評価できます。
+\[
+\mathbb E_q[\ln p(\mathbf x|\mathbf z_1,\mathbf w)]\simeq\sum_{l=1}^L \ln p(\mathbf x|\mathbf z_1^{(l)},\mathbf w) \tag{20.28}
+\]
+ここで \(\mathbf z_1^{(l)}\sim\mathcal N(\mathbf z_1\sqrt{1－β_1}\mathbf x, β_1,\mathbf  I)\)。VAEとは異なり、\(q\)-分布は固定されており、再パラメータ化のトリックは必要ないため、サンプル値を通じて誤差信号を逆伝播する必要はありません。
+</p>
+<p>
+これにより、(20.26)の右側に第2項が残ります。これは、それぞれが隣接する潜在変数値 \(\mathbf z_{t-1}\) と\(\mathbf z_t\) のペアに依存する項の合計で構成されます。前に拡散カーネル(20.6)を導出したときに見たように、\(q(\mathbf z_{t-1}|\mathbf x)\) からガウス分布として直接サンプリングでき、その後、同じくガウス分布である(20.4)を使用して \(\mathbf z_t\) の対応するサンプルを取得できます。これはサンプル数が無限であるという制限内では正しい手順ですが、サンプル値のペアを使用すると、分散が大きくノイズの多い推定値が作成されるため、不必要に多数のサンプルが必要になります。代わりに、用語ごとに1つの値だけをサンプリングすることで推定できる形式で ELBOを書き直します。
+</p>
+<h3>20.2.3 ELBO の書き換え</h3>
+<p>
+変分オートエンコーダのELBOについての議論に続き、ここでの目標は、カルバック-ライブラーダイバージェンスの観点からELBOを記述し、その後閉じた形式で表現できるようにすることです。ニューラルネットワークは逆方向の分布 \(p(\mathbf z_{t-1}|\mathbf z_t, \mathbf w)\) のモデルですが、\(q\)-分布は順方向 \(q(\mathbf z_t|\mathbf z_{t-1}, \mathbf x)\) で表現されるため、分布を逆転させるためにベイズ定理を使用します。
+\[
+q(\mathbf z_t|\mathbf z_{t-1},\mathbf x)=\frac{q(\mathbf z_{t-1}|\mathbf z_t,\mathbf x)q(\mathbf z_t|\mathbf x)}{q(\mathbf z_{t-1}|\mathbf x)} \tag{20.29}
+\]
+これにより、(20.26)の第2項を次の形式で書くことができます。
+\[
+\ln\frac{p(\mathbf z_{t-1}|\mathbf z_t,\mathbf w)}{q(\mathbf z_t|\mathbf z_{t-1},\mathbf x)}=\ln\frac{p(\mathbf z_{t-1}|\mathbf z_t,\mathbf w)}{q(\mathbf z_{t-1}|\mathbf z_t,\mathbf x)}+\ln\frac{q(\mathbf z_{t-1}|\mathbf x)}{q(\mathbf z_t|\mathbf x)} \tag{20.30}
+\]
+(20.30)の右辺の第2項は \(\mathbf w\) から独立しているため、省略できます。(20.30)を(20.26)に代入すると、次のようになります。
+\[
+\mathcal L(\mathbf w)=\mathbb E_q\left[\sum_{t=2}^T \ln\frac{p(\mathbf z_{t-1}|\mathbf z_t,\mathbf w)}{q(\mathbf z_{t-1}|\mathbf z_t,\mathbf x)}+\ln p(\mathbf x|\mathbf z_1,\mathbf w)\right] \tag{20.31} 
+\]
+最後に、(20.31)を次の形式に書き換えることができます。
+\[
+\begin{align}
+\mathcal L(\mathbf w)= &\underbrace{\int q(\mathbf z_1|\mathbf x)\ln p(\mathbf x|\mathbf z_1,\mathbf w)d\mathbf z_1}_{再構成項} \\
+&-\underbrace{\sum_{t=2}^T\int KL(q(\mathbf z_{t-1}|\mathbf z_t,\mathbf x)||p(\mathbf z_{t-1}|\mathbf z_t,\mathbf w))q(\mathbf z_t|\mathbf x) d\mathbf z_t}_{一貫性項} \tag{20.32}
+\end{align}
+\]
+ここで、\(\mathbf z_1\) は被積分関数に現れる唯一の潜在変数であるため、第1項の \(q(\mathbf z_1, ..., \mathbf z_T|\mathbf x)\) に対する期待値を単純化しました。したがって、(20.27)によって定義される期待値では、すべての条件付き分布は1を超える積分だけを残して1まで積分されます。同様に、第 2 項では、各積分には 2 つの隣接する潜在変数 \(\mathbf z_{t-1}\) と \(\mathbf z_t\) のみが含まれ、残りの変数はすべて積分できます。
+</p>
+<p>
+境界(20.32)は、複数のエンコーダーとデコーダーのステージがあることを除いて、(19.14)によって与えられる変分オートエンコーダーのELBOに非常に似ています。再構成項は、観察されたデータサンプルに対して高い確率を与え、サンプリング近似 (20.28)を使用してVAEの対応する項と同じ方法でトレーニングできます。(20.32)の一貫性項はガウス分布のペア間で定義されるため、次のように閉じた形式で表現できます。分布 \(q(\mathbf z_{t-1}|\mathbf z_t, \mathbf x)\) は(20.15)で与えられるのに対し、分布 \(p(\mathbf z_{t-1}|\mathbf z_t, \mathbf w)\) は(20.18)で与えられるため、Kuilback-Leiblerダイバージェンスは次のようになります。
+\[
+\begin{align}
+KL &(q(\mathbf z_{t-1}|\mathbf z_t,\mathbf x)||p(\mathbf z_{t-1}|\mathbf z_t,\mathbf w))\\
+&=\frac{1}{2\beta_t}||\mathbf m_t(\mathbf x,\mathbf z_t)-\boldsymbol{\mu}(\mathbf z_t,\mathbf w,t)||^2+const 
+\end{align}
+\tag{20.33}
+\]
+ここで、\(\mathbf m_t(\mathbf x, \mathbf z_t)\) は(20.16)によって定義され、ネットワークパラメーター \(\mathbf w\) から独立した加法項は定数項に吸収されており、トレーニングでは何の役割も果たしません。(20.32)の整合性項のそれぞれには、\(q(\mathbf z_t|\mathbf x)\) で重み付けされた \(\mathbf z_t\) に関する残りの1つの積分があります。これは、\(q(\mathbf z_t|\mathbf x)\) からサンプルを抽出することによって近似できます。これは、拡散カーネル(20.6)を使用して効率的に行うことができます。
+</p>
+<p>
+KL ダイバージェンス (20.33) が単純な二乗損失関数の形式をとることがわかります。 (20.32) の下界を最大化するようにネットワーク パラメーターを調整するため、ELBO のカルバック-ライブラー発散項の前にマイナス記号があるため、この二乗誤差は最小化されます。
+</p>
+<h3>20.2.4 ノイズの予測</h3>
+<p>
+より高品質な結果をもたらす1つの変更は、マルコフ連鎖の各ステップでノイズ除去された画像を予測する代わりに、ノイズのある画像を作成するために元の画像に追加された総ノイズ成分を予測するようにニューラルネットワークの役割を変更することです。その段階で（Ho、Jain、Abbeel、2020）。これを行うには、まず(20.8)を取得し、次のように再配置します。
+\[
+\mathbf x=\frac{1}{\sqrt{\alpha_t}}\mathbf z_t-\frac{\sqrt{1-\alpha_t}}{\sqrt{\alpha_t}}\boldsymbol{\epsilon}_t \tag{20.34}
+\]
+これを(20.16)に代入すると、逆条件付き分布 \(q(\mathbf z_{t-1}|\mathbf z_t,\mathbf  x)\) の平均 \(\mathbf m_t(\mathbf x,\mathbf  z_t)\) を元のデータ ベクトル \(\mathbf x\) とノイズ \(\mathbf ε\)で書き換えて、次の結果を得ることができます。
+\[
+\mathbf m_t(\mathbf x,\mathbf z_t)=\frac{1}{\sqrt{1-\beta_t}}\left\{\mathbf z_t-\frac{\beta_t}{\sqrt{1-\alpha_t}}\boldsymbol{\epsilon}_t\right\} \tag{20.35}
+\]
+同様に、ノイズ除去された画像を予測するニューラルネットワーク\(\mathbf μ(\mathbf z_t, \mathbf w, t)\) の代わりに、\(\mathbf z_t\) を生成するために \(\mathbf x\) に追加された総ノイズを予測することを目的としたニューラルネットワーク\(\mathbf g(\mathbf z_t, \mathbf w, t)\) を導入します。(20.35)に至ったのと同じ手順に従うと、これら2つのネットワーク機能が次のように関連付けられていることがわかります。
+\[
+\boldsymbol{\mu}(\mathbf z_t,\mathbf w,t)=\frac{1}{\sqrt{1-\beta_t}}\left\{\mathbf z_t-\frac{\beta_t}{\sqrt{1-\alpha_t}}\mathbf g(\mathbf z_t,\mathbf w,t)\right\} \tag{20.36}
+\]
+(20.35)と(20.36)を(20.33)に代入すると、次のようになります。
+\[
+\begin{align}
+KL&(q(\mathbf z_{t-1}|\mathbf z_t,\mathbf x)||p(\mathbf z_{t-1}|\mathbf z_t,\mathbf w)) \\
+\\
+&=\frac{\beta_t}{2(1-\alpha_t)(1-\beta_t)}||\mathbf g(\mathbf z_t,\mathbf w,t)-\boldsymbol{\epsilon}_t||^2+const \\
+\\
+&=\frac{\beta_t}{2(1-\alpha_t)(1-\beta_t)}||\mathbf g(\sqrt{\alpha_t}\mathbf x+\sqrt{1-\alpha_t}\boldsymbol{\epsilon}_t,\mathbf w,t)-\boldsymbol{\epsilon}_t||^2+const \tag{20.37}
+\end{align}
+\]
+ここで、最後の行では(20.8)を使用して \(\mathbf z\) を置き換えています。
+</p>
+<p>
+ELBO(20.32)の再構成項は、\(\mathbf z_1\) のサンプル値を持つ(20.28)を使用して近似できます。\(p(\mathbf x|\mathbf z, \mathbf w)\) に形式(20.18)を使用すると、次のようになります。
+\[
+\ln p(\mathbf x|\mathbf z_1,\mathbf w)=-\frac{1}{2\beta_1}||\mathbf x-\boldsymbol{\mu}(\mathbf z_1,\mathbf w,1)||^2+const \tag{20.38}
+\]
+(20.36)を使用して \(\boldsymbol{\mu}(\mathbf z_1, \mathbf w, 1)\) を代入し、(20.1)を使用して \(\mathbf x\) を代入し、(20.7)から得られる\(α_1 = (1－β_1)\) を利用すると、次のようになります。
+\[
+\ln p(\mathbf x|\mathbf z_1,\mathbf w)=-\frac{1}{2(1-\beta_t)}||\mathbf g(\mathbf z_1,\mathbf w,1)-\boldsymbol{\epsilon}_1||^2+const \tag{20.39}
+\]
+これは、特殊な場合 \(t = 1\) の(20.37)とまったく同じ形式であるため、再構成項と一貫性項を組み合わせることができます。
+</p>
+<p>
+Ho、Jain、および Abbeel (2020)は、(20.37)の前の係数 \(β_t/2(1－α_t)(1－β_t)\) を省略するだけでパフォーマンスがさらに向上することを経験的に発見しました。そのため、マルコフ連鎖のすべてのステップの重みが同じになります。(20.37)のこの簡略化されたバージョンを(20.33)に代入すると、次の形式のトレーニング目的関数が得られます。
+\[
+\mathcal L(\mathbf w)=-\sum_{t=1}^T ||\mathbf g(\sqrt{\alpha_t}\mathbf x+\sqrt{1-\alpha_t}\boldsymbol{\epsilon}_t, \mathbf w,t)-\boldsymbol{\epsilon}_t||^2 \tag{20.40} 
+\]
+(20.40)の右辺の二乗誤差は非常に単純な解釈になります。マルコフ連鎖の特定のステップと特定のトレーニングデータ点 \(\mathbf x\) に対して、ノイズベクトル \(\boldsymbol{\epsilon}_t\) をサンプリングします。これを使用して、そのステップに対応するノイズを含む潜在ベクトル \(\mathbf z\) を作成します。損失関数は、予測されたノイズと実際のノイズの差の二乗になります。ネットワーク \(\mathbf g(･, ･, ･)\) は、ステップ \(t\) で追加された増分ノイズだけでなく、元のデータベクトル \(\mathbf x\) に追加された合計ノイズを予測していることに注意してください。
+</p>
+<p>
+確率的勾配降下法を使用する場合、トレーニングセットからランダムに選択されたデータ点xのネットワークパラメーターに関して損失関数の勾配ベクトルを評価します。また、そのようなデータ点ごとに、(20.40)のtにわたる合計の各項の誤差を評価するのではなく、マルコフ連鎖に沿ってステップ \(t\) をランダムに選択します。これらの勾配はデータ サンプルのミニバッチにわたって蓄積され、重みの更新に使用されます。
+</p>
+<p>
+また、特定のトレーニング サンプルxが使用されるたびに、ノイズの新しいサンプル \(\boldsymbol{\epsilon}_t\) と結合されるため、この損失関数はデータ拡張の形式で自動的に構築されることにも注意してください。上記はすべて、トレーニングセットからの単一のデータ ポイント \(\mathbf x\) に関連しています。 対応する勾配の計算はアルゴリズム20.1に示されています。
+\[
+\boxed{
+\begin{array}{l}
+\textbf{アルゴリズム 20.1 DDPMのトレーニング} \\
+\hline
+入力：トレーニングデータ \mathcal D=\{\mathbf x_n\}\\
+　　　ノイズスケジュール\{\beta_1,\cdots,\beta_T\}　\\
+出力：ネットワークパラメータ　\mathbf w \\
+\hline
+for　t\in\{1,\cdots,T\}　do \\
+　|　\alpha_t \leftarrow \prod_{\tau=1}^t (1-\beta_\tau)　//\beta から\alphaを計算する \\
+end　for \\
+repeat \\
+　|　\mathbf x\sim \mathcal D　//データポイントをサンプル \\
+　|　t\sim\{1,\cdots,T\}　//マルコフチェーンに沿ってポイントをサンプル \\
+　|　\boldsymbol{\epsilon}\sim\mathcal N(\boldsymbol{\epsilon}|\mathbf 0,\mathbf I)　//ノイズベクトルをサンプル \\
+　|　\mathbf z_t\leftarrow \sqrt{\alpha_t}\mathbf x+\sqrt{1-\alpha_t}\boldsymbol{\epsilon}　//ノイズのある潜在変数を評価する \\
+　|　\mathcal L(\mathbf w)\leftarrow ||\mathbf g(\mathbf z_t, \mathbf w,t)-\boldsymbol{\epsilon}||^2　//損失項を計算する \\
+　|　最適化ステップを実行する \\
+until　収束するまで \\
+return　\mathbf w 
+\end{array}
+}
+\]
+</p>
+<h3>20.2.5 新しいサンプルの生成</h3>
+<p>
+ネットワークがトレーニングされると、まずガウス分布 \(p(\mathbf z_T)\) からサンプリングし、次にマルコフ連鎖の各ステップを順にノイズ除去することで、データ空間に新しいサンプルを生成できます。ノイズ除去されたサンプル \(\mathbf z_t\) が与えられた場合、ステップ \(t\) で、3 つのステップでサンプル \(z_{t-1}\) を生成します。まず、ニューラルネットワークの出力 \(\mathbf g(\mathbf z_t, \mathbf w, t)\) を評価します。これを基に、(20.36) を用いて \(\boldsymbol{\mu}(\mathbf z_t,\mathbf  w, t)\) を評価します。最後に、\(p(\mathbf z_{t-1}|\mathbf z_t, \mathbf w) = \mathcal N(\mathbf z_{t-1}|\boldsymbol{\mu}(\mathbf z_t, \mathbf w,t), \beta_t\mathbf I)\) から、分散でスケールされたノイズを追加することでサンプル \(\mathbf z_{t-1}\) を生成します。
+\[
+\mathbf z_{t-1}=\boldsymbol{\mu}(\mathbf z_t, \mathbf w, t)+\sqrt{\beta_t}\boldsymbol{\epsilon} \tag{20.41}
+\]
+ここで、\(\boldsymbol{\epsilon}\sim\mathcal N(\boldsymbol{\epsilon}|\mathbf 0, \mathbf I)\)。ネットワーク \(\mathbf g(･, ･, ･)\) は、\(\mathbf z_t\) を取得するために元のデータベクトル \(\mathbf x\) に追加される総ノイズを予測しますが、サンプリングステップでは、このノイズの一部のみ \(β_t/\sqrt{1－α_t}\) を \(\mathbf z_{t－1}\) から減算し、さらに分散 \(β_t\) を持つノイズを追加して \(\mathbf z_{t－1}\) を生成します。合成データサンプル \(\mathbf x\) を計算する最後のステップでは、ノイズのない出力を生成することを目的としているため、追加のノイズを追加します。サンプリング手順はアルゴリズム20.2にまとめられています。
+</p>
+<p>
+\[
+\boxed{
+\begin{array}{l}
+\textbf{アルゴリズム 20.2:　DDPMからのサンプリング} \\
+\hline
+入力：トレーニングされたDDPMネットワーク \mathbf g(\mathbf z,\mathbf w,t)\\
+　　　ノイズスケジュール\{\beta_1,\cdots,\beta_T\}　\\
+出力：データ空間内のサンプルベクトル \mathbf x　 \\
+\hline
+\mathbf z_T\sim\mathcal N(\mathbf z|\mathbf 0,\mathbf I)　// 初期潜在空間からサンプル\\
+for　t\in T,\cdots,2　do \\
+　|　\alpha_t \leftarrow \prod_{\tau=1}^t (1-\beta_\tau)　//\alphaを計算する \\
+　|　//　ネットワーク出力を評価する　\\
+　|　\boldsymbol{\mu}(\mathbf z_t,\mathbf w,t)\leftarrow \frac{1}{\sqrt{1-\beta_t}}
+\left\{\mathbf z_t-\frac{\beta_t}{\sqrt{1-\alpha_t}}\mathbf g(\mathbf z_t,\mathbf w,t)\right\}　\\
+　|　\boldsymbol{\epsilon}\sim\mathcal N(\boldsymbol{\epsilon}|\mathbf 0,\mathbf I)　//　ノイズベクトルをサンプル　\\
+　|　\mathbf z_{t-1}\leftarrow \boldsymbol{\mu}(\mathbf z_t,\mathbf w,t)+\sqrt{\beta_t}\boldsymbol{\epsilon}　//スケーリングされたノイズを加える \\
+end　for \\
+\mathbf x=\frac{1}{\sqrt{1-\beta_1}}\left\{\mathbf z_1-\frac{\beta_1}{\sqrt{1-\alpha_1}}\mathbf g(\mathbf z_1,\mathbf w,t)\right\}　//最終デノイズステップ \\
+return　\mathbf x 
+\end{array}
+}
+\]
+</p>
+<p>
+データを生成するための拡散モデルの主な欠点は、訓練されたネットワークを介した複数の連続した推論パスが必要であり、計算コストが高くなる可能性があることです。サンプリングプロセスを高速化する1つの方法は、まずノイズ除去プロセスを連続時間にわたる微分方程式に変換し、次に代替の効率的な離散化手法を使用して方程式を効率的に解くことです。
+</p>
+<p>
+この章では、データと潜在変数は連続であるため、ガウスノイズモデルを使用できると仮定しました。拡散モデルは、離散空間に対して定義することもできます(Austin et al., 2021)。たとえば、新しい候補薬物分子を生成するために、生成プロセスの一部に化学元素のサブセットから原子タイプを選択することが含まれます。
+</p>
+<p>
+拡散モデルは、数百または数千のステップを含むノイズプロセスを順番に反転するため、計算量が多くなる可能性があることがわかりました。Song、Meng、および Ermon (2020)は、トレーニング用に同じ目的関数を維持しながら、ノイズプロセスに関するマルコフの仮定を緩和する、ノイズ除去拡散陰的モデルと呼ばれる関連技術を導入しました。これにより、生成されるサンプルの品質を低下させることなく、サンプリング中に1桁または2桁の速度向上が可能になります。
+</p>
+<h2>20.3 スコアのマッチング</h2>
+<p>
+この章でこれまで説明したノイズ除去拡散モデルは、比較的独立して開発され、スコアマッチングに基づいた別のクラスの深層生成モデルと密接に関連しています (Hyvarinen、2005; Song and Ermon、2019)。これらは、データベクトルxに関する対数尤度の勾配として定義され、次の式で与えられるスコア関数またはスタインスコアを利用します。
+\[
+\mathbf s(\mathbf x)=\nabla_{\mathbf x} \ln p(\mathbf x) \tag{20.42}
+\]
+</p>
+<p>
+ここで、勾配はパラメータベクトルに関するものではなく、データベクトルに関するものであることを強調することが重要です。\(\mathbf s(\mathbf x)\) は \(\mathbf x\) と同じ次元のベクトル値関数であり、各要素 \(s_i(\mathbf x) = ∂\ln p(\mathbf x)/∂x_i\) は \(\mathbf x\) の対応する要素 \(x_i\) に関連付けられていることに注意してください。たとえば、\(\mathbf x\) が画像の場合、\(\mathbf s(\mathbf x)\) は、対応するピクセルを持つ同じ寸法の画像として表すこともできます。図20.5は、2次元の確率密度の例と、対応するスコア関数を示しています。
+</p>
+<center><img src="images/fig20_5.png"></center>
+<p class="margin-large">
+図20.5。スコア関数の図。ヒートマップとして表されるガウス分布と、\(\mathbf x\) 値の規則的なグリッド上のベクトルとしてプロットされた(20.42)によって定義された対応するスコア関数の混合からなる2次元の分布を示しています。
+</p>
+<p>
+スコア関数がなぜ役立つかを理解するには、スコアが等しいという特性を持つ2つの関数 \(q(\mathbf x)\) と \(p(\mathbf x)\) を考えてみましょう。したがって、\(\mathbf x\) のすべての値に対して \(∇_x \ln q(\mathbf x) = ∇_x ln p(\mathbf x)\) となります。\(\mathbf x\) に関して方程式の両辺を積分して指数関数をとると、\(q(\mathbf x) = Kp(\mathbf x)\) が得られます。ここで、\(K\) は \(\mathbf x\) に依存しない定数です。したがって、スコア関数のモデル \(\mathbf s(\mathbf x, \mathbf w)\) を学習できれば、元のデータ密度を乗算定数までモデル化したことになります。
+</p>
+<h3>20.3.1 スコアの損失</h3>
+<p>
+このようなモデルをトレーニングするには、モデルのスコア関数s(x, w)を、データを生成した分布p(x)のスコア関数 \(∇_{\mathbf x} \ln p(\mathbf x)\) に一致させることを目的とした損失関数を定義する必要があります。このような損失関数の例は、次の式で与えられる、モデルスコアと真のスコアの間の期待二乗誤差です。
+\[
+J(\mathbf w)=\frac{1}{2}\int ||\mathbf s(\mathbf x,\mathbf w)-\nabla_{\mathbf x}\ln p(\mathbf x)||^2 p(\mathbf x)\,d\mathbf x \tag{20.43}
+\]
+</p>
+<p>
+エネルギーベースのモデルの説明で見たように、正規化定数は勾配演算子によって削除されるため、スコア関数では関連する確率密度を正規化する必要がなく、モデルの選択にはかなりの柔軟性があります。ディープニューラルネットワークを使用してスコア関数 \(\mathbf s(\mathbf x, \mathbf w)\) を表現するには、大きく2 つの方法があります。\(\mathbf s\) の各要素 \(s_i\) は \(\mathbf x\) の要素 \(x_i\) の1つに対応するため、最初のアプローチは、入力と同じ数の出力を持つネットワークを作成することです。ただし、スコア関数は、より限定された関数クラスであるスカラー関数 (対数確率密度) の勾配として定義されます。したがって、別のアプローチは、単一出力 \(φ(\mathbf x)\) を持つネットワークを用意し、自動微分を使用して \(∇_{\mathbf x}(\mathbf x)\) を計算することです。ただし、この2番目のアプローチには2つの逆伝播ステップが必要なため、計算コストが高くなります。このため、ほとんどのアプリケーションは単純に最初のアプローチを採用します。
+</p>
+<h3>20.3.2 修正されたスコアの損失</h3>
+<p>
+損失関数 (20.43) に関する問題の1 つは、真のデータスコア \(∇_{\mathbf x} \ln p(\mathbf x)\) がわからないため、損失関数を直接最小化できないことです。我々が持っているのは有限データセット\(\mathcal D = (\mathbf x_1, ..., \mathbf x_N)\) だけで、そこから経験的分布を構築できます。
+\[
+p_{\mathcal D}(\mathbf x)=\frac{1}{N}\sum_{n=1}^N \delta(\mathbf x-\mathbf x_n) \tag{20.44}
+\]
+ここで、\(δ(\mathbf x)\) はディラックのデルタ関数であり、非形式的には、次の特性を持つ \(\mathbf x = \mathbf 0\) における無限に高い「スパイク」と考えることができます。
+\[
+\begin{align}
+\delta(\mathbf x) &=0　\mathbf x\neq \mathbf 0 \tag{20.45} \\
+\\
+\int \delta(\mathbf x) &=1 \tag{20.46}
+\end{align}
+\]
+</p>
+<p>
+(20.44)は \(\mathbf x\) の微分可能な関数ではないため、そのスコア関数を計算できません。この問題には、ノイズモデルを導入してデータポイントを「塗りつぶし」、滑らかで微分可能な密度表現を与えることで対処できます。これはパルゼン推定量またはカーネル密度推定量として知られており、次のように定義されます。
+\[
+q_\sigma(\mathbf z)=\int q(\mathbf z|\mathbf x,\sigma)p(\mathbf x) d\mathbf x \tag{20.47}
+\]
+ここで、\(q(\mathbf z|\mathbf x, σ)\) はノイズ カーネルです。カーネルの一般的な選択はガウスです。
+\[
+q(\mathbf z|\mathbf x,\sigma)=\mathcal N(\mathbf z|\mathbf x,\sigma^2\mathbf I) \tag{20.48}
+\]
+</p>
+<p>
+損失関数(20.43)を最小化する代わりに、次の形式で平滑化されたパルゼン密度に関する対応する損失を使用します。
+\[
+J(\mathbf w)=\frac{1}{2}\int ||\mathbf s(\mathbf z,\mathbf w)-\nabla_{\mathbf z} \ln q_\sigma(\mathbf z)||^2q_\sigma(\mathbf z)d\mathbf z \tag{20.49}
+\]
+重要な結果は、(20.47)を(20.49)に代入することで、この損失関数を(Vincent、2011)で与えられる同等の形式で書き直すことができることです。
+\[
+J(\mathbf w)=\frac{1}{2}\int\int||\mathbf s(\mathbf z,\mathbf w)-\nabla_{\mathbf z}\ln q(\mathbf z|\mathbf x,\sigma)||^2 q(\mathbf z|\mathbf x,\sigma)p(\mathbf x)d\mathbf z d\mathbf x + const \tag{20.50}
+\]
+経験密度(20.44)を使用して\(p(\mathbf x)\) を代入すると、次のようになります。
+\[
+J(\mathbf w)=\frac{1}{2N}\sum_{n=1}^N\int||\mathbf s(\mathbf z,\mathbf x)-\nabla_{\mathbf z}\ln q(\mathbf z|\mathbf x_n,\sigma)||^2 q(\mathbf z|\mathbf x_n,\sigma)d\mathbf z+const \tag{20.51}
+\]
+ガウスパルゼンカーネル（20.48）の場合、スコア関数は次のようになります。
+\[
+\nabla_{\mathbf z}\ln q(\mathbf z|\mathbf x,\sigma)=-\frac{1}{\sigma}\boldsymbol{\epsilon}  \tag{20.52}
+\]
+ここで、\(\boldsymbol{\epsilon}=\mathbf  z-\mathbf x\) は \(\mathcal N(\mathbf z|\mathbf 0, \mathbf I)\) から抽出されます。特定のノイズモデル(20.6)を考慮すると、次のようになります。
+\[
+\nabla_{\mathbf z}\ln q(\mathbf z|\mathbf x,\sigma)=-\frac{1}{\sqrt{1-\alpha_t}}\boldsymbol{\epsilon} \tag{20.53}
+\]
+したがって、スコア損失(20.50)がニューラルネットワーク予測とノイズ \(\boldsymbol{\epsilon}\) の差を測定していることがわかります。したがって、この損失関数はノイズ除去拡散モデルで使用される形式(20.37)と同じ最小値を持ち、スコア関数 \(\mathbf s(\mathbf z, \mathbf w)\) は最大で定数スケーリング \(-1/\sqrt{(1-\alpha_t}\) (Song and Ermon、2019)までノイズ予測ネットワーク \(\mathbf g(\mathbf z, \mathbf w)\) と同じ役割を果たします。最小化(20.50)はノイズ除去スコア マッチングとして知られており、ノイズ除去拡散モデルとの密接な関係がわかります。ノイズ分散 \(σ^2\) をどのように選択するかという問題が残りますが、これについてはすぐに戻ります。
 </p>
 <p>
+スコアベースのモデルをトレーニングしたら、次に新しいサンプルを描画する必要があります。ランジュバン力学はスコア関数に基づいており、正規化された確率分布を必要としないため、スコアベースのモデルに適しています。これを図20.6に示します。
 </p>
+<center><img src="images/fig20_6.png"></center>
 <p>
+図20.6。図20.5に示す分布に対して(14.61)によって定義されたランジュバン力学を使用して得られたサンプリング軌跡の例。すべてプロットの中心から始まる3つの軌跡を示しています。
 </p>
+<h3>20.3.3 ノイズの分散</h3>
 <p>
+一連のトレーニングデータからスコア関数を学習する方法と、ランジュバンサンプリングを使用して学習した分布から新しいサンプルを生成する方法を説明しました。ただし、このアプローチには3つの潜在的な問題があることがわかります(Song and Ermon, 2019; Luo, 2022)。まず、データ分布がデータ空間よりも低次元の多様体上にある場合、確率密度は多様体から外れた点でゼロになり、ここでは \(\ln p(\mathbf x)\) が未定義であるためスコア関数は未定義になります。第2に、データ密度が低い領域では、損失関数(20.43)が密度によって重み付けされるため、スコア関数の推定が不正確になる可能性があります。スコア関数が不正確であると、ランジュバン サンプリングを使用するときに軌道が不良になる可能性があります。第三に、スコア関数の正確なモデルを使用したとしても、データ分布が互いに素な分布の混合を含む場合、ランジュバン手順は正しくサンプリングできない可能性があります。
 </p>
 <p>
+3つの問題はすべて、ノイズ分散に十分大きな値を選択することで解決できます。データ分布が不鮮明になるため、カーネル関数(20.48)で使用されます。ただし、分散が大きすぎると、元の分布に大きな歪みが生じ、これ自体がスコア関数のモデリングに不正確さをもたらします。このトレードオフは、一連の分散値 \(σ_1^2<σ_2^2< ... <σ_T^2\) (Song and Ermon, 2019)を考慮することで対処できます。ここで、\(σ_1^2\) はデータ分布が正確に表現されるほど十分に小さいのに対し、\(σ_T^2\) はデータ分布を正確に表現できるほど十分に大きいです。前述の問題が回避されます。次に、スコア ネットワークは追加の入力 \(\mathbf s(\mathbf x, \mathbf w, \sigma^2)\) として分散を取得するように変更され、各項が表す形式(20.51)の損失関数の加重和である損失関数を使用してトレーニングされます。関連するネットワークと対応する摂動データセットの間のエラー。データ ベクトル \(\mathbf x_n\) の場合、損失関数は次の形式になります。
+\[
+\frac{1}{2}\sum_{i=1}^L \lambda(i)\int||\mathbf s(\mathbf z,\mathbf w,\sigma_i^2)-\nabla_{\mathbf z}\ln q(\mathbf z|\mathbf x_n,\sigma_i)||^2q(\mathbf z|\mathbf x_n,\sigma_i)d\mathbf z \tag{20.54}
+\]
+ここで、\(λ(i)\) は重み付け係数です。このトレーニング手順は、階層型ノイズ除去ネットワークのトレーニングに使用された手順を正確に反映していることがわかります。
 </p>
 <p>
+トレーニングが完了すると、\(i = L,L－1, ...,2,1\) の各モデルからランジュバンサンプリングのいくつかのステップを順番に実行することでサンプルを生成できます。この手法はアニールされたランジュバンダイナミクスと呼ばれ、ノイズ除去拡散モデルからサンプリングするために使用されるアルゴリズム20.2に似ています。
 </p>
+<h3>20.3.4 確率微分方程式</h3>
 <p>
+拡散モデルのノイズプロセスを構築する場合、多くの場合、数千のステップを使用すると便利であることがわかりました。したがって、ニューラル微分方程式を導入したときに無限の深さのニューラルネットワークに対して行ったように、無限数のステップの限界を考慮すると何が起こるのかを疑問に思うのは自然なことです。このような制限を設ける場合、各ステップのノイズ分散βtがステップサイズに応じて確実に小さくなるようにする必要があります。 これは、確率微分方程式またはSDEとして連続時間の拡散モデルを定式化することにつながります(Song et al., 2020)。ノイズ除去拡散確率モデルとスコアマッチングモデルは両方とも、連続時間SDEの離散化として見ることができます。
 </p>
 <p>
+一般的なSDEは、ベクトルzへの微小な更新として次の形式で書くことができます
+\[
+d\mathbf z=\underbrace{\mathbf f(\mathbf z,t)dt}_{ドリフト}+\underbrace{g(t)d\mathbf v}_{拡散} \tag{20.55}
+\]
+ここで、ドリフト項はODEと同様に決定論的ですが、拡散項は確率的であり、たとえば無限小のガウスステップによって与えられます。ここでパラメータεは、物理システムとの類推により「時間」と呼ばれることがよくあります。拡散モデルの順方向ノイズプロセス(20.3)は、連続時間制限を考慮して(20.55)の形式のSDEとして記述できます。
 </p>
 <p>
+SDE (20.55)の場合、次のような対応する逆SDE (Song et al., 2020)があります。
+\[
+d\mathbf z=\{\mathbf f(\mathbf z,t)-g^2(t)\nabla_{\mathbf z}\ln p(\mathbf z)\}dt+g(t)d\mathbf v  \tag{20.56}
+\]
+ここで、\(∇_{\mathbf z} \ln p(\mathbf z)\) をスコア関数として認識します。(20.55)で与えられるSDEは、\(t = T\) から \(t = 0\) まで逆に解く必要があります。
 </p>
 <p>
+SDEを数値的に解くには、時間変数を離散化する必要があります。最も簡単なアプローチは、オイラー丸山ソルバーとして知られる、固定された等間隔の時間ステップを使用することです。逆SDEの場合、ランジュバン方程式の形式を復元します。ただし、より柔軟な形式の離散化を使用する、より洗練されたソルバーを使用することもできます(Kloeden および Platen、2013)。
 </p>
 <p>
+SDEによって支配されるすべての拡散プロセスについては、その軌跡がSDEと同じ周辺確率密度 \(p(\mathbf z|t)\) を持つODEによって記述される、対応する決定論的プロセスが存在します(Song er al., 2020)。(20.56)形式のSDEの場合、対応するODEは次の式で与えられます。
+\[
+\frac{d\mathbf z}{dt}=\mathbf f(\mathbf z,t)-\frac{1}{2}g^2(t)\nabla_{\mathbf z}\ln p(\mathbf z) \tag{20.57}
+\]
 </p>
 <p>
+ODE定式化では、効率的な適応ステップソルバーを使用して関数評価の数を大幅に削減できます。さらに、確率的拡散モデルを正規化フローモデルに関連付けることができ、そこから変数変更式(18.1)を使用して対数尤度の正確な評価を提供できます。
 </p>
+<h2>20.4 誘導拡散</h2>
 <p>
+これまで、\(p(\mathbf x)\) から独立して描画された一連のトレーニング例 \(\mathbf x_1,...,\mathbf x_N\) から学習された無条件密度 \(p(\mathbf x)\) を表現する方法として拡散モデルを検討してきました。モデルがトレーニングされると、この分布から新しいサンプルを生成できます。図1.3で顔画像の深層生成モデルからの無条件サンプリングの例をすでに見ましたが、この場合はGANモデルからのものです。
 </p>
 <p>
+ただし、多くのアプリケーションでは、条件付き分布 \(p(\mathbf x|\mathbf c)\) からサンプリングする必要があります。ここで、条件変数εは、たとえば、画像の目的のコンテンツのクラスラベルまたはテキスト記述である可能性があります。これは、画像の超解像度、画像の修復、ビデオ生成などのアプリケーションの基礎も形成します。これを達成するための最も簡単なアプローチは、εをノイズ除去ニューラルネットワーク \(\mathbf g(\mathbf z, \mathbf w, t, \mathbf c)\) への追加入力として扱い、次に一致するペア \(\{\mathbf x_n, \mathbf c_n\}\) を使用してネットワークをトレーニングすることです。このアプローチの主な制限は、ネットワークが条件付け変数に不十分な重みを与えたり、無視したりする可能性があることです。そのため、条件付け情報にどの程度の重みを与えるかを制御し、これをサンプルの多様性とトレードオフする方法が必要です。コンディショニング情報を一致させるためのこの追加の圧力は、ガイダンスと呼ばれます。 別の分類器モデルが使用されるかどうかに応じて、ガイダンスには2つの主なアプローチがあります。
 </p>
+<h3>20.4.1 分類器のガイダンス</h3>
 <p>
+トレーニングされた分類器 \(p(\mathbf c|\mathbf x)\) が利用可能であると仮定し、スコア関数の観点から拡散モデルを検討します。ベイズの定理を使用すると、条件付き拡散モデルのスコア関数を次の形式で書くことができます。
+\[
+\begin{align}
+\nabla_{\mathbf x}\ln p(\mathbf x|\mathbf c) &=\nabla_{\mathbf x}\ln\left\{\frac{p(\mathbf c|\mathbf x)p(\mathbf x)}{p(\mathbf c)}\right\} \\
+\\
+&=\nabla_{\mathbf x}\ln p(\mathbf x)+\nabla_{\mathbf x}\ln p(\mathbf c|\mathbf x) \tag{20.58}
+\end{align}
+\]
+ここで、\(p(\mathbf c)\) は \(\mathbf x\) から独立しているため、\(∇_{\mathbf x} \ln p(\mathbf c) = 0\) を使用しました。(20.58)の右側の最初の項は通常の無条件スコア関数ですが、第2項は分類器モデルの下で指定されたラベルcの確率を最大化する方向にノイズ除去プロセスを推進します (Dhariwal and Nichol, 2021)。分類器の影響は、分類器の勾配に与えられる重みを制御する、ガイダンススケールと呼ばれるハイパーパラメータAを導入することで制御できます。サンプリングに使用されるスコア関数は次のようになります。
+\[
+score(\mathbf x,\mathbf c,\lambda)=\nabla_{\mathbf x}\ln p(\mathbf x)+\lambda\nabla_{\mathbf x}\ln p(\mathbf c|\mathbf x) \tag{20.59}
+\]
+\(λ= 0\) の場合、元の無条件拡散モデルが復元されますが、\(λ= 1\) の場合、条件付き分布 \(p(\mathbf x|\mathbf c)\) に対応するスコアが得られます。 \(λ> 1\) の場合、モデルは条件付けラベルを尊重することが強く推奨され、\(λ\gg 1\)の値(例: \(λ= 10\))を使用できます。ただし、モデルは「簡単」を好むため、サンプルの多様性が犠牲になります。分類器が正しく分類できることを示す例です。
 </p>
 <p>
+分類器ベースのガイダンスのアプローチに関する1つの問題は、別個の分類器をトレーニングする必要があることです。さらに、標準の分類器はクリーンな例でトレーニングされるのに対し、この分類器はさまざまな程度のノイズを持つ例を分類できる必要があります。したがって、別の分類器の使用を避ける別のアプローチに目を向けます。
 </p>
+<h3>20.4.2 分類器を使用しないガイダンス</h3>
 <p>
+(20.59)の \(∇_{\mathbf x}\ln p(\mathbf c|\mathbf x)\) を(20.58)を使用して置き換えると、スコア関数を次の形式で書くことができます。
+\[
+score(\mathbf x,\mathbf c,\lambda)=\lambda\nabla_{\mathbf x}\ln p(\mathbf x|\mathbf c)+(1-\lambda)\nabla_{\mathbf x}\ln p(\mathbf x) \tag{20.60}
+\]
+\(0 <λ<1\) の場合、これは条件付き対数密度 \(\ln p(\mathbf x|\mathbf c)\) と無条件対数密度 \(\ln p(\mathbf x)\) の凸の組み合わせを表します。\(λ> 1\) の場合、無条件スコアからの寄与は負になります。これは、モデルが条件付け情報を無視するサンプルを生成する確率を積極的に減らし、条件付けを行うサンプルを優先することを意味します。
 </p>
 <p>
+さらに、条件変数 \(\mathbf c\) がnull値(たとえば \(\mathbf c = \mathbf 0)\) に設定される単一の条件付きモデルをトレーニングすることにより、\(p(\mathbf x|\mathbf c)\) と \(p(\mathbf x)\) をモデル化するために別個のネットワークをトレーニングすることを回避できます。トレーニング、通常は約10 ～ 20%。この場合、\(p(\mathbf x)\) は \(p(\mathbf x|\mathbf c = \mathbf 0)\) で表されます。これは、トレーニングベクトルのランダムなサブセットに対して条件付け入力がまとめてゼロに設定されるドロップアウトに多少似ています。
 </p>
 <p>
+トレーニングが完了すると、スコア関数(20.60)を使用して、条件付き情報の強力な重み付けが促進されます。実際には、分類器を使用しないガイダンスは、分類器ガイダンスよりもはるかに高品質の結果をもたらします(Nichol et al., 2021; Saharia et al., 2022)。その理由は、分類器 \(p(\mathbf c|\mathbf x)\) は \(\boldsymbol{\epsilon}\) を適切に予測する限り、入力ベクトル \(\mathbf x\) の大部分を無視できるのに対し、分類器なしのガイダンスは条件付き密度 \(p(\mathbf x|\mathbf c)\) に基づいており、これにはxのあらゆる側面に対して高い確率を割り当てる必要があるためです。
 </p>
 <p>
+テキスト誘導拡散モデルは、大規模な言語モデルの技術を活用して、条件付け入力を、事前に定義されたクラス ラベルのセットからの単なる選択ではなく、プロンプトと呼ばれる一般的なテキスト シーケンスにすることができます。これにより、テキスト入力が2つの方法でノイズ除去プロセスに影響を与えることができます。1つは、トランスフォーマーベースの言語モデルからの内部表現をノイズ除去ネットワークへの入力と連結することにより、もう1つはノイズ除去ネットワーク内のクロスアテンション層がノイズ除去ネットワークに対応できるようにすることです。テキストトークンシーケンス。テキスト プロンプトを条件とした、分類器を使用しないガイダンスを図 20.7 に示します。
 </p>
+<center><img src="images/fig20_7.png"></center>
 <p>
+図20.7　条件付けテキストを使用してGLIDEと呼ばれるモデルから生成された拡散モデルの分類器を使用しないガイダンスの図 竹を食べるパンダのステンドグラスの窓。左側の例はλ= 0 (ガイダンスなし、単なる単純な条件付きモデル)で生成されたのに対し、右側の例はλ= 3で生成されました。
 </p>
 <p>
+条件付き拡散モデルのもう1つの用途は、低解像度画像を対応する高解像度画像に変換する画像超解像度です。これは本質的に逆問題であり、複数の高解像度画像は特定の低解像度画像と一致します。超解像度は、低解像度画像を条件変数として使用してガウスから高解像度サンプルのノイズを除去することで実現できます(Saharia, Ho, et al., 2021)。この方法の例を図20.8に示します。このようなモデルは、非常に高い解像度を達成するためにカスケード接続することができます(Ho et al., 2021)。たとえば、64×64 から256×256に、次に256×256から1024× 1024に移行します。各段階は通常、U-netによって表されます。 各 U-net は、前のU-netの最終的なノイズ除去された出力に基づいて条件付けされます。
 </p>
+<center><img src="images/fig20_8.png"></center>
 <p>
+図20.8　低解像度画像の2つの例と、拡散モデルによって生成された対応する高解像度画像の関連サンプル。上の行には、16 ×16の入力イメージと、対応する128×128の出力イメージが、入力イメージの生成元となった元のイメージとともに表示されます。下の行は、64×64の入力イメージと256×256の出力イメージを示し、比較のために元のイメージも示しています。
 </p>
 <p>
+このタイプのカスケードは、画像生成拡散モデルでも使用できます。このモデルでは、画像のノイズ除去が低解像度で実行され、その後、結果が別のネットワーク(テキストプロンプトを入力として受け取る場合もあります)を使用してアップサンプリングされます。最終的な高解像度出力を提供します(Nichol et al., 2021; Saharia et al., 2022)。ノイズ除去プロセスにはノイズ除去ネットワークを通過する数百回のパスが含まれる可能性があるため、これにより、高次元空間で直接作業する場合と比較して、計算コストを大幅に削減できます。これらのアプローチは画像空間内で直接動作しますが、解像度は低くなります。
 </p>
 <p>
+高解像度画像の空間に拡散モデルを直接適用する高い計算コストに対処する別のアプローチは、潜在拡散モデルと呼ばれます (Rombach et al., 2021)。ここでは、オートエンコーダが最初にノイズのない画像でトレーニングされて画像の低次元表現が取得され、その後修正されます。次に、U-netアーキテクチャは、それ自体が画像として直接解釈できない低次元空間内でノイズ除去を実行するようにトレーニングされます。最後に、固定オートエンコーダーネットワークの出力半分を使用して、ノイズ除去された表現が高解像度画像空間にマッピングされます。このアプローチにより、低次元空間がより効率的に利用され、画像のセマンティクスに焦点を当てることができ、デコーダはノイズ除去された低次元表現から対応する鮮明な高解像度画像を作成することができます。
 </p>
 <p>
+条件付き画像生成には、修復、トリミング解除、復元、画像モーフィング、スタイル転送、カラー化、ぼかし除去、ビデオ生成など、他にも多くのアプリケーションがあります(Yang、Srivastava、および Mandt、2022)。修復の例を図20.9に示します。
 </p>
+<center><img src="images/fig20_9.png"></center>
 <p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
-</p>
-<p>
+図20.9　インペイントの例。左側に元のイメージ、中央にセクションが削除されたイメージ、右側に修復されたイメージが示されています。
 </p>
     </body>
 </html>
