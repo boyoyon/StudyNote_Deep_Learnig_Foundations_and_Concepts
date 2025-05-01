@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+        <meta charset="utf-8" />
+        <title>18章</title>
+        <style type="text/css">
+            p
+            {
+                padding-left: 2em;
+            }
+            .margin-large
+            {
+                margin-left: 30px;
+            }
+           .margin-abstract {
+               margin-left: 60px; /* 左マージンを広くする */
+               margin-right: 60px; /* 右マージンを広くする */
+           }
+        </style>
+    <style>
+        .two-columns {
+            display: flex;
+            flex-direction: row;
+            gap: 20px; /* 列間のスペース */
+        }
+        .column {
+            flex: 1; /* 各列が均等に幅を取る */
+        }
+    </style>
+<style>
+.three-columns {
+  display: flex;
+  gap: 10px; /* 列間の余白を設定 */
+}
+.column {
+  flex: 1; /* 各列の幅を均等にする */
+  padding: 10px; /* 内側の余白を設定 */
+}
+</style>
+    <style>
+        .styleRef { 
+            text-indent: -40px; /* 最初の行の字下げを逆方向に */
+            margin-left: 10px; /* 2行目以降の字下げを調整 */
+            ul {
+                  list-style-type: none; /* 箇条書き記号を非表示 */
+                  padding-left: 40px; /* 全体の左余白 */
+            }
+            li {
+            }
+        }
+    </style>
+    <style>
+        .styleBullet { 
+            text-indent: -20px; /* 最初の行の字下げを逆方向に */
+            margin-left: 30px; /* 2行目以降の字下げを調整 */
+            ul {
+                  list-style-type: none; /* 箇条書き記号を非表示 */
+                  padding-left: 0px; /* 全体の左余白 */
+            }
+            li {
+            }
+        }
+    </style>
+    <style>
+            ol
+            {
+                margin-left: 30px;
+            }
+            ul
+            {
+                margin-left: 30px;
+            }
+    </style>
+    <style>
+        .thin-line {
+            margin: 0; 
+            margin-left:2em;
+            border: 0;
+            height: 1px;
+            background-color: gray;
+        }
+
+        .thick-line {
+            margin: 0; 
+            margin-left:2em;
+            border: 0;
+            height: 2px;
+            background-color: black;
+        }
+    </style>
+    <style>
+        .highlight {
+            color: red; /* 好きな色に変更してください */
+        }
+    </style>
+    </head>
+    <body>
+        <h1><center>18章 正規化フロー</center></h1>
+<p>
+<!--
+We have seen how generative adversarial networks (GANs) extend the framework of linear latent-variable models by using deep neural networks to represent highly flexible and learnable nonlinear transformations from the latent space to the data space. However, the likelihood function is generally either intractable, because the network function cannot be inverted, or may not even be defined if the latent space has a lower dimensionality than the data space. In GANs, a second, discriminative network was therefore introduced to facilitate adversarial training.
+-->
+私たちは, 敵対的生成ネットワーク(GAN)がディープニューラルネットワークを使用して線形潜在変数モデルのフレームワークを拡張し, 潜在空間からデータ空間への非常に柔軟で学習可能な非線形変換をどのように表現するかを見てきました。ただし, ネットワーク関数は反転できないため, 尤度関数は一般に扱いにくいか, 潜在空間がデータ空間よりも低い次元である場合には定義すらできない可能性があります。したがって, GANでは, 敵対的トレーニングを促進するために2番目の識別ネットワークが導入されました。
+</p><p>
+<!--
+Here we discuss the second of our four approaches to training nonlinear latent variable models that involves restricting the form of the neural network model such that the likelihood function can be evaluated without approximation while still ensuring that sampling from the trained model is straightforward. Suppose we define a distribution pz(z), sometimes also called a base distribution, over a latent variable z along with a nonlinear function x = f(z, w), given by a deep neural network, that transforms the latent space into the data space. Assuming pz(z) is a simple distribution such as a Gaussian, sampling from such a model is easy as each latent sample z*~pz(z) is simply passed through the neural network to generate a corresponding data sample x* = f(z*, w).
+-->
+ここでは, 非線形潜在変数モデルをトレーニングする4つのアプローチのうち, 2つ目について説明します。このアプローチでは, ニューラルネットワークモデルの形式を制限して, 尤度関数を近似なしで評価できるようにする一方で, トレーニングされたモデルからのサンプリングが簡単であることを確認します。潜在変数 \(\mathbf z\) に対する分布 \(p_{\mathbf z}(\mathbf z)\)（ベース分布とも呼ばれます）と, 深層ニューラルネットワークによって与えられる非線形関数 \(\mathbf x = f(\mathbf z, \mathbf w)\) を定義すると仮定します。この関数は, 潜在空間をデータ空間に変換します。\(p_{\mathbf z}(\mathbf z)\) がガウス分布のような単純な分布であると仮定すると, このようなモデルからのサンプリングは簡単です。各潜在サンプル \(\mathbf z^*\sim p_{\mathbf z}(\mathbf z)\) は, 単にニューラルネットワークを通過して対応するデータサンプル \(\mathbf x^* = \mathbf f(\mathbf z^*, \mathbf w)\) を生成します。
+</p><p>
+<!--
+To calculate the likelihood function for this model, we need the data-space distribution, which depends on the inverse of the neural network function. We write this as z = g(x, w), and it satisfies z = g(f(z, w), w). This requires that, for every value of w, the functions f(z, w) and g(x, w) are invertible, also called bijective, so that each value of x corresponds to a unique value of z and vice versa. We can then use the change of variables formula to calculate the data density:
+-->
+このモデルの尤度関数を計算するには, ニューラルネットワーク関数の逆関数に依存するデータ空間分布が必要です。これを \(\mathbf z = \mathbf g(\mathbf x, \mathbf w)\) と書き, \(\mathbf z = \mathbf g(f(\mathbf z, \mathbf w), \mathbf w)\) を満たします。これには, \(\mathbf w\) のすべての値に対して, 関数 \(\mathbf f(\mathbf z, \mathbf w)\) と \(\mathbf g(\mathbf x, \mathbf w)\) が可逆的(全単射とも呼ばれる)である必要があり, \(\mathbf x\) の各値が \(\mathbf z\) の一意の値に対応し, その逆も同様です。次に, 変数の変更式を使用してデータ密度を計算できます。
+\[
+p_{\mathbf x} (\mathbf x|\mathbf w)=p_{\mathbf z} (\mathbf g(\mathbf x,\mathbf w))|\det \mathbf J(\mathbf x) | \tag{18.1}
+\]
+<!--
+where J(x) is the Jacobian matrix of partial derivatives whose elements are given by
+-->
+ここで, \(\mathbf J(\mathbf x)\) は偏導関数のヤコビ行列であり, その要素は次のように与えられます。
+\[
+J_{ij}(x)=\frac{\partial g_i(\mathbf x,\mathbf w)}{\partial x_j} \tag{18.2}
+\]
+<!--
+and |･| denotes the modulus or absolute value. We will continue to refer to z as a ‘latent’ variable even though the deterministic mapping means that any given data value x corresponds to a unique value of z whose value is therefore no longer uncertain.
+-->
+|･| は係数または絶対値を示します。決定論的マッピングは, 任意のデータ値 \(\mathbf x\) が \(\mathbf z\) の一意の値に対応することを意味しますが, その値はもはや不確実ではありません。
+</p><p>
+<!--
+The mapping function f(z, w) will be defined in terms of a special form of neural network, whose structure we will discuss shortly. One consequence of requiring an invertible mapping is that the dimensionality of the latent space must be the same as that of the data space, which can lead to large models for high-dimensional data such as images. Also, in general, the cost of evaluating the determinant of a D×D matrix is O(D3), so we will seek to impose some further restrictions on the model in order that evaluation of the Jacobian matrix determinant is more efficient.
+-->
+マッピング関数 \(\mathbf f(\mathbf z, \mathbf w)\) は, 特別な形式のニューラルネットワークに関して定義されます。その構造については後ほど説明します。可逆マッピングを必要とする結果の1つは, 潜在空間の次元がデータ空間の次元と同じでなければならないということであり, これにより, 画像などの高次元データのモデルが大きくなる可能性があります。また, 一般に, \(D×D\) 行列の行列式を評価するコストは \(\mathcal O(D^3)\) であるため, ヤコビアン行列の行列式の評価をより効率的に行うために, モデルにさらにいくつかの制限を課すことを検討します。
+</p><p>
+<!--
+If we consider a training set D = {x1, ..., xN} of independent data points, the log likelihood function is given from (18.1) by
+-->
+独立したデータ点のトレーニング セット \(\mathcal D = \{\mathbf x_1, ..., \mathbf x_N\}\) を考慮すると, 対数尤度関数は(18.1)から次のように求められます。
+\[
+\begin{align}
+\ln p(\mathcal D|\mathbf w) &=\sum_{n=1}^N \ln p_{\mathbf x}(\mathbf x_n|\mathbf w) \tag{18.3} \\
+\\
+&= \sum_{n=1}^N \left\{\ln p_{\mathbf z}\left(\mathbf g(\mathbf x_n,\mathbf w)\right)+\ln|\det \mathbf J(\mathbf x_n)|\right\} \tag{18.4}
+\end{align}
+\]
+<!--
+and our goal is to use the likelihood function to train the neural network. To be able to model a wide range of distributions, we want the transformation function x = f(z, w) to be highly flexible, and so we use a deep neural network architecture. We can ensure that the overall function is invertible if we make each layer of the network invertible. To see this, consider three successive transformations, each corresponding to one layer, of the form:
+-->
+そして私たちの目標は, 尤度関数を使用してニューラルネットワークをトレーニングすることです。広範囲の分布をモデル化できるようにするには, 変換関数 \(\mathbf x = \mathbf f(\mathbf z, \mathbf w)\) に柔軟性を持たせる必要があるため, ディープ ニューラルネットワークアーキテクチャを使用します。ネットワークの各層を可逆的にすれば, 全体の機能が可逆であることを保証できます。これを確認するには, それぞれが1つのレイヤーに対応する次の形式の3つの連続した変換を考えてみましょう。
+\[
+\mathbf x=\mathbf f^A(\mathbf f^B(\mathbf f^C(\mathbf z))) \tag{18.5}
+\]
+<!--
+Then the inverse function is given by
+-->
+このとき, 逆関数は次のように与えられます。
+\[
+\mathbf z=\mathbf g^C (\mathbf g^B (\mathbf g^A (\mathbf x))) \tag{18.6}
+\]
+<!--
+where gA, gB, and gC are the inverse functions of fA, fB, and fC, respectively. Moreover, the determinant of the Jacobian for such a layered structure is also easy to evaluate in terms of the Jacobian determinants for each of the individual layers by making use of the chain rule of calculus:
+-->
+ここで, \(\mathbf g^A, \mathbf g^B, \mathbf g^C\) はそれぞれ \(\mathbf f^A, \mathbf f^B, \mathbf f^C\) の逆関数です。さらに, このような層状構造のヤコビアンの行列式は, 微積分の連鎖則を利用して, 個々の層のヤコビアン行列式の観点から簡単に評価することもできます。
+\[
+J_{ij}=\frac{\partial z_i}{\partial x_j}=\sum_k\sum_l \frac{\partial g_i^C}{\partial g_k^B}\frac{\partial g_k^B}{\partial g_l^A}\frac{\partial g_l^A}{\partial x_j} \tag{18.7}
+\]
+<!--
+We recognize the right-hand side as the product of three matrices, and the determinant of a product is the product of the determinants. Therefore, the log determinant of the overall Jacobian will be the sum of the log determinants corresponding to each layer.
+-->
+右辺は 3 つの行列の積として認識され, 積の行列式は行列式の積です。 したがって, ヤコビアン全体の対数行列式は, 各層に対応する対数行列式の合計になります。
+</p><p>
+<!--
+This approach to modelling a flexible distribution is called a normalizing flow because the transformation of a probability distribution through a sequence of mappings is somewhat analogous to the flow of a fluid. Also, the effect of the inverse mapping is to transform the complex data distribution into a normalized form, typically a Gaussian or normal distribution. Normalizing flows have been reviewed by Kobyzev, Prince, and Brubaker (2019) and Papamakarios er al. (2019). Here we discuss the core concepts from the two main classes of normalizing flows used in practice: coupling flows and autoregressive flows. We also look at the use of neural differential equations to define invertible mappings, leading to continuous flows.
+-->
+柔軟な分布をモデル化するこのアプローチは, 正規化フローと呼ばれます。これは, 一連のマッピングによる確率分布の変換が流体の流れに似ているためです。また, 逆マッピングの効果は, 複雑なデータ分布を正規化された形式, 通常はガウス分布または正規分布に変換することです。フローの正規化については, Kobyzev, Prince, Brubaker (2019)およびPapamakariosら（2019年）によってレビューされています。ここでは, 実際に使用される正規化フローの2つの主要なクラス, 結合フローと自己回帰フローの中核となる概念について説明します。また, 連続フローにつながる可逆マッピングを定義するためのニューラル微分方程式の使用についても検討します。
+</p>
+<!--
+<h2>18.1 Coupling Flows</h2>
+-->
+<h2>18.1 結合フロー(Coupling Flows)</h2>
+<p>
+<!--
+Our goal is to design a single invertible function layer, so that we can compose many of them together to define a highly flexible class of invertible functions. Consider first a linear transformation of the form
+-->
+私たちの目標は, 単一の可逆関数レイヤーを設計して, それらの多くを一緒に構成して, 非常に柔軟な可逆関数のクラスを定義できるようにすることです。まず, 形式の線形変換を考えます。
+\[
+\mathbf x=a\mathbf z+\mathbf b \tag{18.8}
+\]
+<!--
+This is easy to invert, giving
+-->
+これは簡単に反転できます。
+\[
+\mathbf z=\frac{1}{a}(\mathbf x-\mathbf b) \tag{18.9}
+\]
+</p><p>
+<!--
+However, linear transformations are closed under composition, meaning that a sequence of linear transformations is equivalent to a single overall linear transformation. Moreover, a linear transformation of a Gaussian distribution is again Gaussian. So even if we have many such ‘layers’ of linear transformation, we will only ever have a Gaussian distribution. The question is whether we can retain the invertability of a linear transformation while allowing additional flexibility so that the resulting distribution can be non-Gaussian.
+-->
+ただし, 線形変換は合成の下で閉じています。これは, 一連の線形変換が単一の全体的な線形変換と同等であることを意味します。さらに, ガウス分布の線形変換もやはりガウス分布です。したがって, たとえそのような線形変換の「層」がたくさんあったとしても, ガウス分布しか得られません。問題は, 線形変換の可逆性を維持しながら, 結果として生じる分布が非ガウスになるように柔軟性を追加できるかどうかです。
+</p><p>
+<!--
+One solution to this problem is given by a form of normalizing flow model called real NVP (Dinh, Krueger, and Bengio, 2014; Dinh, Sohl-Dickstein, and Bengio, 2016), which is short for ‘real-valued non-volume-preserving’. The idea is to partition the latent-variable vector z into two parts z = (zA, zB), so that if z has dimension D and zA has dimension d, then zB has dimension D - d. We similarly partition the output vector x = (xA, xB) where xA has dimension d and xB has dimension D - d. For the first part of the output vector, we simply copy the input:
+-->
+この問題に対する1つの解決策は, リアル NVP と呼ばれる正規化フローモデルの形式によって提供されます(Dinh, Krueger, および Bengio, 2014; Dinh, Sohl-Dickstein, および Bengio, 2016)。これは「real-valued non-volume-preserving」の略です。このアイデアは, 潜在変数ベクトル \(\mathbf z\) を2つの部分 \(\mathbf z = (\mathbf z_A, \mathbf z_B)\) に分割し,  \(\mathbf z\) の次元が \(D\), \(\mathbf z_A\) の次元が \(d\) である場合, \(\mathbf z_B\) の次元は \(D - d\) になるようにすることです。同様に, 出力ベクトル \(\mathbf x = (\mathbf x_A, \mathbf x_B)\) を分割します。ここで,  \(\mathbf x_A\) の次元は \(d\) , \(\mathbf x_B\) の次元は \(D - d\) です。出力ベクトルの最初の部分では, 入力を単純にコピーします。
+\[
+\mathbf x_A=\mathbf z_A \tag{18.10}
+\]
+</p><p>
+<!--
+The second part of the vector undergoes a linear transformation, but now the coefficients in the linear transformation are given by nonlinear functions of zA:
+-->
+ベクトルの2番目の部分は線形変換を受けますが, 線形変換の係数は \(\mathbf z_A\) の非線形関数によって与えられます。
+\[
+\mathbf x_B=exp(\mathbf s(\mathbf z_A,\mathbf w))\odot\mathbf z_B+\mathbf b(\mathbf z_A,\mathbf w) \tag{18.11}
+\]
+<!--
+where s(zA, w) and b(zA, w) are the real-valued outputs of neural networks, and the exponential ensures that the multiplicative term is non-negative. Here ⦿ denotes the Hadamard product involving an element-wise multiplication of the two vectors. Similarly, the exponential in (18.11) is taken element-wise. Note that we have shown the same vector w in both network functions. In practice, these may be implemented as separate networks with their own parameters, or as one network with two sets of outputs.
+<!--
+ここで, \(\mathbf s(\mathbf z_A, \mathbf w)\) と \(\mathbf b(\mathbf z_A, \mathbf w)\) はニューラルネットワークの実数値出力であり, 指数関数により乗算項が負でないことが保証されます。ここで,  \(odot\) は, 2つのベクトルの要素ごとの乗算を含むアダマール積を示します。同様に, (18.11)の指数は要素ごとに取得されます。両方のネットワーク関数で同じベクトル \(\mathbf w\) を示したことに注意してください。実際には, これらは独自のパラメータを備えた別個のネットワークとして実装することも, 2セットの出力を備えた1つのネットワークとして実装することもできます。
+</p><p>
+<!--
+Due to the use of neural network functions, the value of x can be a very flexible function of xA. Nevertheless, the overall transformation is easily invertible: given a value for x = (xA, xB) we first compute
+-->
+ニューラルネットワーク関数を使用しているため,  \(\mathbf x\) の値は \(\mathbf x_A\) の非常に柔軟な関数になります。それにもかかわらず, 全体的な変換は簡単に反転できます。\(\mathbf x = (\mathbf x_A, \mathbf x_B)\) の値が与えられると, 最初に計算します。
+\[
+\mathbf z_A = \mathbf x_A \tag{18.12}
+\]
+<!--
+then we evaluate s(zA, w) and b(zA, w), and finally we compute zB using
+-->
+次に, \(\mathbf s(\mathbf z_A, \mathbf w)\) と \(\mathbf b(\mathbf z_A, \mathbf w)\) を評価し, 最後に次を使用して \(\mathbf z_B\) を計算します。
+\[
+\mathbf z_B = exp(-\mathbf s(\mathbf z_A, \mathbf w))\odot (\mathbf x_B - \mathbf b(\mathbf z_A, \mathbf w))  \tag{18.13}
+\]
+<!--
+The overall transformation is illustrated in Figure 18.1. Note that there is no requirement for the individual neural network functions s(zA, w) and b(zA, w) to be invertible.
+-->
+全体的な変換を図18.1に示します。個々のニューラルネットワーク関数 \(\mathbf s(\mathbf z_A, \mathbf w)\) および \(\mathbf b(\mathbf z_A, \mathbf w)\) が可逆である必要はないことに注意してください。
+</p><p>
+<!--
+Figure 18.1 Asingle layer of the real NVP normalizing flow model. Here the network NN1 computes the function exp(s(z.4,w)) and the network NN2 computes the function b(z., w). The output vector is then defined by (18.10) and (18.11).
+-->
+</p>
+<center><img src="images/fig18_1.png"></center>
+<p class="margin-large">
+図18.1　実際のNVP正規化フローモデルの単一層。ここで, ネットワークNN1は関数 \(exp(\mathbf s(\mathbf z_A,\mathbf w))\) を計算し, ネットワークNN2は関数 \(\mathbf b(\mathbf z_A, \mathbf w)\) を計算します。 出力ベクトルは(18.10)と(18.11)によって定義されます。
+</p><p>
+<!--
+Now consider the evaluation of the Jacobian defined by (18.2) and its determinant. We can divide the Jacobian matrix into blocks, corresponding to the partitioning of z and x, giving
+-->
+次に, (18.2)によって定義されるヤコビアンとその行列式の評価を考えます。ヤコビアン行列を, \(\mathbf z\) と \(\mathbf x\) の分割に対応するブロックに分割すると, 次のようになります。
+\[
+\mathbf J=
+\begin{bmatrix}
+\mathbf I_d & \mathbf 0 \\
+\frac{\partial \mathbf z_B}{\partial \mathbf x_A} & diag(\exp(-\mathbf s))
+\end{bmatrix}
+\tag{18.14}
+\]
+</p><p>
+<!--
+The top left block corresponds to the derivatives of zA with respect to x and hence from (18.12) is given by the d x d identity matrix. The top right block corresponds to the derivatives of zA with respect to xB and these terms vanish, again from (18.12). The bottom left block corresponds to the derivatives of zs with respect to x... From (18.13), these are complicated expressions involving the neural network functions. Finally, the bottom right block corresponds to the derivatives of zB with respect to xB, Which from (18.13) are given by a diagonal matrix whose diagonal elements are given by the exponentials of the negative elements of s(zA, w). We therefore see that the Jacobian matrix (18.14) is a lower triangular matrix, meaning that all elements above the leading diagonal are zero. For such a matrix, the determinant is just the product of the elements along the leading diagonal, and therefore it does not depend on the complicated expressions in the lower left block. Consequently, the determinant of the Jacobian is simply given by the product of the elements of exp(-s(zA, W)).
+-->
+左上のブロックは, \(\mathbf x\) に関する \(\mathbf z_A\) の導関数に対応し, したがって (18.12) からは \(d x d\) 単位行列によって与えられます。 右上のブロックは, \(\mathbf x_B\) に関する \(\mathbf z_A\) の微分に対応し, これらの項は, やはり (18.12) から消えます。 左下のブロックは, \(\mathbf x\)  に関する zs の微分に対応します... (18.13) より, これらはニューラル ネットワーク関数を含む複雑な式です。 最後に, 右下のブロックは,  \(\mathbf x_B\) に関する \(\mathbf z_B\) の導関数に対応します。これは, (18.13) から, 対角要素が \(\mathbf s(\mathbf z_A, \mathbf w)\) の負の要素の指数によって与えられる対角行列によって与えられます。 したがって, ヤコビ行列 (18.14) は下三角行列であることがわかります。これは, 先頭の対角線より上のすべての要素がゼロであることを意味します。 このような行列の場合, 行列式は先頭の対角線に沿った要素の積にすぎないため, 左下のブロックの複雑な式には依存しません。 したがって, ヤコビアンの行列式は, 単に \(\exp(-\mathbf s(\mathbf z_A, \mathbf W))\) の要素の積によって与えられます。
+</p><p>
+<!--
+A clear limitation of this approach is that the value of zA is unchanged by the transformation. This is easily resolved by adding another layer in which the roles of zA and zB are reversed, as illustrated in Figure 18.2. This double-layer structure can then be repeated multiple times to facilitate a very flexible class of generative models.
+-->
+このアプローチの明らかな制限は, \(\mathbf z_A\) の値が変換によって変更されないことです。これは, 図18.2に示すように, \(\mathbf z_A\) と \(\mathbf z_B\) の役割が逆になっている別の層を追加することで簡単に解決できます。この2層構造を複数回繰り返すことで, 非常に柔軟なクラスの生成モデルを容易に作成できます。
+</p><p>
+
+<!--
+Figure 18.2 By composing two layers of the form shown in Figure 18.1, we obtain a more flexible, but still invertible, nonlinear layer. Each sub-layer is invertible and has an easily evaluated Jacobian, and hence the overall double layer has the same properties.
+-->
+</p>
+<center><img src="images/fig18_2.png"></center>
+<p class="margin-large">
+図18.2。図18.1に示すフォームの2つの層を合成することにより, より柔軟でありながら反転可能な非線形層が得られます。 各サブレイヤーは反転可能で, 簡単に評価できるヤコビアンを持っているため, 二重レイヤー全体は同じプロパティを持ちます。
+</p><p>
+<!--
+The overall training procedure involves creating mini-batches of data points, in which the contribution of each data point to the log likelihood function is obtained from (18.4). For a latent distribution of the form N(z|0, I), the log density is simply —||z|||2/2 up to an additive constant. The inverse transformation z = g(x) is calculated using a sequence of inverse transformations of the form (18.13). Similarly, the log of the Jacobian determinant is given by a sum of log determinants for each layer where each term is itself a sum of terms of the form -si(x, w). Gradients of the log likelihood can be evaluated using automatic differentiation, and the network parameters updated by stochastic gradient descent.
+-->
+全体的なトレーニング手順には, データポイントのミニバッチの作成が含まれます。この中で, 対数尤度関数に対する各データポイントの寄与が(18.4)から取得されます。\(\mathcal N(\mathbf z|\mathbf 0, \mathbf I)\) の形式の潜在分布の場合, 対数密度は加法定数までは単純に \(-||\mathbf z||^2/2\) になります。逆変換 \(\mathbf z = \mathbf g(\mathbf x)\) は, (18.13)の形式の逆変換のシーケンスを使用して計算されます。同様に, ヤコビアン行列式の対数は, 各層の対数行列式の合計によって与えられます。ここで, 各項自体は \(-s_i(\mathbf x, \mathbf w)\) の形式の項の合計です。対数尤度の勾配は自動微分を使用して評価でき, ネットワークパラメーターは確率的勾配降下法によって更新されます。
+</p><p>
+<!--
+The real NVP model belongs to a broad class of normalizing flows called coupling flows, in which the linear transformation (18.11) is replaced by a more general form:
+-->
+実際のNVPモデルは, カップリングフローと呼ばれる正規化フローの広範なクラスに属しており, 線形変換(18.11)はより一般的な形式に置き換えられます。
+\[
+\mathbf x_B=\mathbf h(\mathbf z_B,\mathbf g(\mathbf z_A,\mathbf w)) \tag{18.15}
+\]
+<!--
+where h(zB. g) is a function of zB that is efficiently invertible for any given value of g and is called the coupling function. The function g(zA, w) is called a conditioner and is typically represented by a neural network.
+-->
+ここで, \(\mathbf h(\mathbf z_B, \mathbf g)\) は, \(\mathbf g\) の任意の値に対して効率的に反転可能な \(\mathbf z_B\) の関数であり, 結合関数と呼ばれます。関数 \(\mathbf g(\mathbf z_A, \mathbf w)\) はコンディショナーと呼ばれ, 通常はニューラルネットワークによって表されます。
+</p><p>
+<!--
+We can illustrate the real NVP normalizing flow using a simple data set, sometimes known as ‘two moons’, as shown in Figure 18.3. Here a two-dimensional Gaussian distribution is transformed into a more complex distribution by using two successive layers each of which consists of alternate transformations on each of the two dimensions.
+-->
+図18.3に示すように, 「ツームーン」とも呼ばれる単純なデータセットを使用して, 実際のNVP正規化フローを説明できます。 ここでは, 2次元のそれぞれに対する交互の変換で構成される2つの連続した層を使用することにより, 2次元のガウス分布がより複雑な分布に変換されます。
+</p><p>
+<!--
+Figure 18.3 Illustration of the real NVP normalizing flow model applied to the two-moons data set showing (a) the Gaussian base distribution, (b) the distribution after a transformation of the vertical axis only, (c) the distribution after a subsequent transformation of the horizontal axis, (d) the distribution after a second transformation of the vertical axis, (e) the distribution after a second transformation of the horizontal axis, and (f) the data set on which the model was trained
+-->
+</p>
+<center><img src="images/fig18_3.png"></center>
+<p class="margin-large">
+図18.3。2つの月のデータセットに適用された実際のNVP正規化フローモデルの図。(a)ガウスベース分布, (b)縦軸のみの変換後の分布, (c)横軸の後続変換後の分布を示しています。(d)縦軸の2回目の変換後の分布, (e)横軸の2回目の変換後の分布, (f)モデルがトレーニングされたデータセット
+</p>
+
+<h2>18.2 自己回帰フロー(Autoregressive Flows)</h2>
+<p>
+<!--
+A related formulation of normalizing flows can be motivated by noting that the joint distribution over a set of variables can always be written as the product of conditional distributions, one for each variable. We first choose an ordering of the variables in the vector x, from which we can write, without loss of generality,
+-->
+正規化フローの関連した定式化は, 一連の変数にわたる結合分布が常に, 変数ごとに1つずつ条件付き分布の積として記述できることに注目することによって動機付けられます。まず, ベクトルx内の変数の順序を選択します。一般性を失うことなく, 次のように書き込むことができます。
+\[
+p(x_1,⋯,x_D)=\prod_{i=1}^D p(x_i |\mathbf x_{1:i-1}) \tag{18.16}
+\]
+<!--
+where X1:i-1 denotes x1, ..., xi-1. This factorization can be used to construct a class of normalizing flow called a masked autoregressive flow, or MAF (Papamakarios, Pavlakou, and Murray, 2017), given by
+-->
+ここで, \(\mathbf x_{1:i-1}\) は \(x_1, ..., x_{i-1}\) を表します。この因数分解は, マスクされた自己回帰フロー(MAF)と呼ばれる正規化フローのクラスを構築するために使用でき, 次のようになります (Papamakarios, Pavlakou, および Murray, 2017)。
+\[
+x_i=h(z_i,\mathbf g_i (\mathbf x_{1:i-1},\mathbf w_i )) \tag{18.17}
+\]
+<!--
+which is illustrated in Figure 18.4(a). Here h(zi, ･) is the coupling function, which is chosen to be easily invertible with respect to zi, and gi is the conditioner, which is typically represented by a deep neural network. The term masked refers to the use of a single neural network to implement a set of equations of the form (18.17) along with a binary mask (Germain ef al., 2015) that force a subset of the network weights to be zero to implement the autoregressive constraint (18.16).
+-->
+これを図18.4(a)に示します。ここで, \(h(z_i, ･)\) はカップリング関数であり,  \(z_i\) に関して簡単に可逆であるように選択され, \(\mathbf g_i\) はコンディショナーであり, 通常は深層ニューラルネットワークで表されます。マスクされたという用語は, (18.17)の式のセットを実装するための単一のニューラルネットワークを使用し, (Germain ef al., 2015)のバイナリマスクとともに, ネットワークの一部の重みをゼロに強制することにより, 自己回帰制約(18.16)を実装することを意味します。
+</p><p>
+<!--
+Figure 18.4 Illustration of two alternative structures for autoregressive normalizing flows. The masked autoregressive flow shown in (a) allows efficient evaluation of the likelihood function, whereas the alternative inverse autoregressive flow shown in (b) allows for efficient
+-->
+</p>
+<center><img src="images/fig18_4.png"></center>
+<p class="margin-large">
+図18.4。自己回帰正規化フローの2つの代替構造の図。(a)に示されているマスクされた自己回帰フローでは尤度関数の効率的な評価が可能ですが, (b)に示されている代替の逆自己回帰フローでは効率的な尤度関数の評価が可能です。
+</p><p>
+<!--
+In this case the reverse calculations needed to evaluate the likelihood function are given by
+-->
+この場合, 尤度関数を評価するために必要な逆計算は次のようになります。
+\[
+z_i=h^{-1} (x_i,\mathbf g_i (\mathbf x_{1:i-1},\mathbf w_i )) \tag{18.18}
+\]
+<!--
+and hence can be performed efficiently on modern hardware since the individual functions in (18.18) needed to evaluate z1, ..., zD can be evaluated in parallel. The Jacobian matrix corresponding to the set of transformations (18.18) has elements ∂zi/∂xj, which form an upper-triangular matrix whose determinant is given by the product of the diagonal elements and can therefore also be evaluated efficiently. However, sampling from this model must be done by evaluating (18.17), which is intrinsically sequential and therefore slow because the values of x1, ..., xi-1 must be evaluated before xi can be computed.
+-->
+したがって, \(z_1, ..., z_D\) の評価に必要な(18.18)の個々の関数を並行して評価できるため, 最新のハードウェアで効率的に実行できます。変換セット(18.18)に対応するヤコビ行列には要素 \(∂z_i/∂x_j\) があり, 行列式が対角要素の積によって与えられる上三角行列を形成するため, 効率的に評価することもできます。ただし, このモデルからのサンプリングは(18.17)を評価することによって実行する必要があります。これは \(x_i\) を計算する前に \(x_1, ..., x_{i-1}\) の値を評価する必要があるため, 本質的に逐次的で遅くなります。
+</p><p>
+<!--
+To avoid this inefficient sampling, we can instead define an inverse autoregressive flows, or IAF (Kingma et al., 2016), given by
+-->
+この非効率なサンプリングを回避するために, 代わりに, 次のように与えられる逆自己回帰フロー, つまりIAF (Kingma et al., 2016)を定義できます。
+\[
+x_i=h(z_i,\tilde{\mathbf g}_i(\mathbf z_{1:i-1},\mathbf w_i )) \tag{18.19}
+\]
+<!--
+as illustrated in Figure 18.4(b). Sampling is now efficient since, for a given choice of z, the evaluation of the elements x1, ..., xD using (18.19) can be performed in parallel. However, the inverse function, which is needed to evaluate the likelihood, requires a series of calculations of the form
+-->
+図18.4(b)に示すように。 zの特定の選択に対して, (18.19)を使用した要素 \(x_1, ..., x_D\) の評価を並行して実行できるため, サンプリングが効率的になります。ただし, 尤度を評価するために必要な逆関数には, 次の形式の一連の計算が必要です。
+\[
+z_i=h^{-1}(x_i, \tilde{\mathbf g}_i(\mathbf z_{1:i-1},\mathbf w_i )) \tag{18.20}
+\]
+<!--
+which are intrinsically sequential and therefore slow. Whether a masked autoregressive flow or an inverse autoregressive flow is preferred will depend on the specific application.
+-->
+これらは本質的にシーケンシャルであるため, 速度が遅くなります。マスクされた自己回帰フローと逆自己回帰フローのどちらが優先されるかは, 特定のアプリケーションによって異なります。
+</p><p>
+<!--
+We see that coupling flows and autoregressive flows are closely related. Al-though autoregressive flows introduce considerable flexibility, this comes with a computational cost that grows linearly in the dimensionality D of the data space due to the need for sequential ancestral sampling. Coupling flows can be viewed as a special case of autoregressive flows in which some of this generality is sacrificed for efficiency by dividing the variables into two groups instead of D groups.
+-->
+結合フローと自己回帰フローが密接に関連していることがわかります。自己回帰フローはかなりの柔軟性をもたらしますが, 先祖の連続サンプリングが必要なため, データ空間の次元Dで直線的に増加する計算コストが伴います。カップリングフローは, 変数を \(D\) グループではなく2つのグループに分割することにより, 効率性のためにこの一般性の一部が犠牲になっている自己回帰フローの特殊なケースとみなすことができます。
+</p>
+<h2>18.3 連続フロー(Continuous Flows)</h2>
+<p>
+<!--
+The final approach to normalizing flows that we consider in this chapter will make use of deep neural networks defined in terms of an ordinary differential equation, or ODE. This can be thought of as a deep network with an infinite number of layers. We first introduce the concept of a neural ODE then we see how this can be applied to the formulation of a normalizing flow model.
+-->
+この章で検討するフローを正規化する最後のアプローチでは, 常微分方程式(ODE)の観点から定義されたディープニューラル ネットワークを利用します。これは, 無限の層を持つ深いネットワークと考えることができます。まずニューラルODEの概念を紹介し, 次にこれを正規化フローモデルの定式化にどのように適用できるかを見ていきます。
+</p>
+<h3>18.3.1 神経差分方程式(Neural differential equations)</h3>
+<p>
+<!--
+We have seen that neural networks are especially useful when they comprise many layers of processing, and so we can ask what happens if we explore the limit of an infinitely large number of layers. Consider a residual network where each layer of processing generates an output given by the input vector with the addition of some parameterized nonlinear function of that input vector:
+-->
+ニューラルネットワークが多くの処理層で構成されている場合に特に有用であることがわかったので, 無限に多い層の限界を探索すると何が起こるかを尋ねることができます。処理の各層が, 入力ベクトルのパラメーター化された非線形関数を追加して, 入力ベクトルによって与えられる出力を生成する残差ネットワークを考えてみましょう。
+\[
+\mathbf z^{(t+1)}=\mathbf z^{(t)}+\mathbf f(\mathbf z^{(t)},\mathbf w) \tag{18.21}
+\]
+<!--
+where t = 1,...,T labels the layers in the network. Note that we have used the same function at each layer, with a shared parameter vector w, because this allows us to consider an arbitrarily large number of such layers while keeping the number of parameters bounded. Imagine that we increase the number of layers while ensuring that the changes introduced at each layer become correspondingly smaller. In the limit, the hidden-unit activation vector becomes a function z(t) of a continuous variable t, and we can express the evolution of this vector through the network as a differential equation:
+-->
+ここで, \(t = 1,...,T\) はネットワーク内の層にラベルを付けます。共有パラメータベクトルwを使用して各層で同じ関数を使用したことに注意してください。これにより, パラメータの数を制限しながら, 任意の多数の層を考慮できるからです。各層に導入される変更がそれに応じて小さくなるようにしながら, 層の数を増やすことを想像してください。極限では, 隠れユニット活性化ベクトルは連続変数tの関数z(t)になり, ネットワークを介したこのベクトルの発展を微分方程式として表現できます。
+\[
+\frac{d\mathbf z(\mathbf t)}{dt}=\mathbf f(\mathbf z(t),\mathbf w) \tag{18.22}
+\]
+<!--
+where \(t\) is often referred to as ‘time’. The formulation in (18.22) is known as a neural ordinary differential equation or neural ODE (Chen et al., 2018). Here ‘ordinary’ means that there is a single variable \(t\). If we denote the input to the network by the vector \(\mathbf z(0)\), then the output \(\mathbf z(T)\) is obtained by integration of the differential equation
+-->
+ここで, \(t\) は「時間」と呼ばれることがよくあります。(18.22)の定式化は, ニューラル常微分方程式またはニューラルODEとして知られています(Chen et al., 2018)。ここで「普通」とは, 変数 \(t\) が1つだけであることを意味します。ネットワークへの入力をベクトル \(\mathbf z(0)\) で表すと, 出力 \(\mathbf z(T)\) は微分方程式の積分によって得られます。
+\[
+\mathbf z(t)=\int_0^T \mathbf f(\mathbf z(t),\mathbf w)dt \tag{18.23}
+\]
+</p><p>
+<!--
+This integral can be evaluated using standard numerical integration packages. The simplest method for solving differential equations is Euler’s forward integration method, which corresponds to the expression (18.21). In practice, more powerful numerical integration algorithms can adapt their function evaluation to achieve. In particular, they can adaptively choose values of t that typically are not uniformly spaced. The number of such evaluations replaces the concept of depth in a conventional layered network. A comparison of a standard layered neural network and a neural differential equation are shown in Figure 18.5
+-->
+この積分は, 標準の数値積分パッケージを使用して評価できます。微分方程式を解くための最も簡単な方法は, 式(18.21)に対応するオイラーの順積分法です。実際には, より強力な数値積分アルゴリズムを使用して, 関数評価を調整して達成できます。 特に, 通常は等間隔ではない \(t\) の値を適応的に選択できます。このような評価の数は, 従来の階層化ネットワークにおける深さの概念を置き換えます。標準的な層状ニューラルネットワークとニューラル微分方程式の比較を図18.5に示します。
+
+</p><p>
+<!--
+Figure 18.5 Comparison of a conventional layered network with a neural differential equation. The diagram on the left corresponds to a residual network with five layers and shows trajectories for several starting values of a single scalar input. The diagram on the right shows the result of numerical integration of a continuous neural ODE, again for several starting values of the scalar input, in which we see that the function is not evaluated at uniformly-spaced time intervals, but instead the evaluation points are chosen adaptively by the numerical solver and depend on the choice of input value. [From Chen et al. (2018) with permission]
+-->
+</p>
+<center><img src="images/fig18_5.png"></center>
+<p class="margin-large">
+図18.5。従来の層状ネットワークと神経微分方程式の比較。左側の図は, 5つのレイヤーを持つ残差ネットワークに対応し, 単一のスカラー入力のいくつかの開始値の軌跡を示しています。右側の図は, スカラー入力のいくつかの開始値について, 連続ニューラルODEの数値統合の結果を示しています。このことは, 関数が均一に間隔の間隔で評価されず, 代わりに評価ポイントが数値ソルバーによって適応的に選択され, 入力値の選択に依存します。[Chen et al. (2018)]
+</p>
+<h3>18.3.2 神経常微分方程式逆伝播(Neural ODE backpropagation)</h3>
+<p>
+<!--
+We now need to address the challenge of how to train a neural ODE, that is how to determine the value of w by optimizing a loss function. Let us assume that we are given a data set comprising values of the input vector z(0) along with an associated output target vector and a loss function L(･) that depends on the output vector z(T). One approach would be to use automatic differentiation to differentiate through all of the operations performed by the ODE solver during the forward pass. Although this is straightforward to do, it is costly from a memory perspective and is not optimal in terms of controlling numerical error. Instead, Chen et al. (2018) treat the ODE solver as a black box and use a technique called the adjoint sensitivity method, which can be viewed as the continuous analogue of explicit backpropagation. Recall that backpropagation involves, for each data point, three successive phases: first a forward propagation to evaluate the activation vectors at each layer of the network, second the evaluation of the derivatives of the loss with respect to the activations at each layer starting at the output and propagating backwards through the network by exploiting the chain rule of calculus, and third the evaluation of the derivatives with respect to network parameters by forming products of activations from the forward pass and gradients from the backward pass. We will see that there are analogous steps when computing the gradients for a neural ODE.
+-->
+ここで, ニューラルODEをトレーニングする方法の課題に対処する必要があります。それは, 損失関数を最適化することにより, Wの値を決定する方法です。入力ベクトル \(\mathbf z(0)\) の値を含むデータセットが, 関連する出力ターゲットベクトルと出力ベクトル \(\mathbf z(T)\) に依存する損失関数 \(L(･)\) が与えられていると仮定します。1つのアプローチは, 自動差別化を使用して, フォワードパス中にODEソルバーが実行するすべての操作を区別することです。これは簡単ですが, 記憶の観点からは費用がかかり, 数値エラーを制御するという点では最適ではありません。代わりに, Chenら(2018)はODEソルバーをブラックボックスとして扱い, 明示的なバックプロパゲーションの連続的な類似体と見なすことができる補助感度法と呼ばれる手法を使用します。バックプロパゲーションには, 各データポイントについて, 3の連続したフェーズが含まれることを思い出してください：最初にネットワークの各層で活性化ベクトルを評価するための順方向伝播, 次に, 各レイヤーで始まる各レイヤーでの活性化に関する損失の導関数の評価を含むことを思い出してください。計算のチェーンルールを活用することにより, ネットワークを介して出力および伝播し, 第三に, フォワードパスからのアクティベーションの積と後方パスの勾配を形成することにより, ネットワークパラメーターに関する導関数の評価を3番目に出力します。ニューラルODEの勾配を計算する際には, 類似の手順があることがわかります。
+</p><p>
+<!--
+To apply backpropagation to neural ODEs, we define a quantity called the adjoint given by
+-->
+ ニューラルODEにバックプロパゲーションを適用するには, 以下によって与えられた随伴と呼ばれる数量を定義します
+\[
+\mathbf a(t)=\frac{dL}{d\mathbf z(t)} \tag{18.24}
+\]
+<!--
+We see that a(T) corresponds to the usual derivative of the loss with respect to the output vector. The adjoint satisfies its own differential equation given by
+-->
+\(\mathbf  a(T)\) は, 出力ベクトルに対する損失の通常の誘導体に対応することがわかります。随伴は以下によって与えられる独自の微分方程式を満たします
+\[
+\frac{d\mathbf a(t)}{dt}=-\mathbf a(t)^T ∇_{\mathbf z} f(\mathbf z(t),\mathbf w) \tag{18.25}
+\]
+<!--
+which is a continuous version of the chain rule of calculus. This can be solved by integrating backwards starting from a(T), which again can be done using a black-box ODE solver. In principle, this requires that we have stored the trajectory z(t) computed during the forward phase, which could be problematic as the inverse solver might wish to evaluate z(t) at different values of t compared to the forward solver. Instead we simply allow the backwards solver to recompute any required values of z(t) by integrating (18.22) alongside (18.25) starting with the output value z(T).
+-->
+これは微積分の連鎖則の連続バージョンです。これは, \(\mathbf a(T)\) から開始して逆方向積分することで解決できます。これもブラックボックスODEソルバーを使用して実行できます。原則として, これには順方向フェーズ中に計算された軌道 \(\mathbf z(t)\) を保存しておく必要がありますが, 逆ソルバーは順方向ソルバーと比較して異なる \(t\) 値で \(\mathbf z(t)\) を評価する必要があるため, 問題が発生する可能性があります。代わりに, 出力値z(T)から開始して(18.25)と並行して(18.22)を積分することにより, 後方ソルバーが \(\mathbf z(t)\) の必要な値を再計算できるようにします。
+</p><p>
+<!--
+The third step in the backpropagation method is to evaluate derivatives of the loss with respect to network parameters by forming appropriate products of activations and gradients. When a parameter value is shared across multiple connections in a network, the total derivative is formed from the sum of derivatives for each of the connections. For our neural ODE, in which the same parameter vector w is shared throughout the network, this summation becomes an integration over f, which takes the form
+-->
+バックプロパゲーション法の3番目のステップは, 活性化と勾配の適切な積を形成することによって, ネットワークパラメーターに関する損失の導関数を評価することです。パラメータ値がネットワーク内の複数の接続間で共有される場合, 合計導関数は各接続の導関数の合計から形成されます。同じパラメータベクトルwがネットワーク全体で共有されるニューラルODE の場合, この合計はfに関する積分となり, 次の形式になります。
+\[
+∇_{\mathbf w} L=-\int_0^T\mathbf a(t)^T ∇_{\mathbf w} f(\mathbf z(t),\mathbf w)dt \tag{18.26}
+\]
+</p><p>
+<!--
+The derivatives ∇zf in (18.25) and ∇wf in (18.26) can be evaluated efficiently using automatic differentiation. Note that the above results can equally be applied to a more general neural network function f(z(t), t, w) that has an explicit dependence on t in addition to the implicit dependence through z(t).
+-->
+(18.25) の導関数 \(∇_zf\) と(18.26)の \(∇_{\mathbf w}f\) は, 自動微分を使用して効率的に評価できます。上記の結果は, \(\mathbf z(t)\) による暗黙的な依存性に加えて,  \(t\) への明示的な依存性を持つ, より一般的なニューラルネットワーク関数 \(\mathbf f(\mathbf z(t), t, \mathbf w)\) にも同様に適用できることに注意してください。
+</p><p>
+<!--
+One benefit of neural ODEs trained using the adjoint method, compared to conventional layered networks, is that there is no need to store the intermediate results of the forward propagation, and hence the memory cost is constant. Furthermore neural ODEs can naturally handle continuous-time data in which observations occur at arbitrary times. If the error function L depends on values of z(t) other than the output value, then multiple runs of the reverse-model solver are required, with one　run for each consecutive pair of outputs, so that the single solution is broken down　into multiple consecutive solutions in order to access the intermediate states (Chen　et al., 2018). Note that a high level of accuracy in the solver can be used during training, with a lower accuracy, and hence fewer function evaluations, during inference　in applications for which compute resources are limited.
+-->
+従来の階層型ネットワークと比較して, アジョイント法を使用してトレーニングされたニューラルODEの利点の1つは, 順伝播の中間結果を保存する必要がないため, メモリコストが一定であることです。さらに, ニューラルODEは, 観測が任意の時間に発生する連続時間データを自然に処理できます。誤差関数Lが出力値以外のz(t)の値に依存する場合, 単一の解が次のように分割されるように, 連続する出力ペアごとに1回の実行で, 逆モデルソルバーを複数回実行する必要があります。中間状態にアクセスするには, 複数の連続した解を使用します(Chen et al., 2018)。ソルバーの高レベルの精度はトレーニング中に使用できますが, コンピューティングリソースが制限されているアプリケーションでの推論中には, 精度が低くなり, 関数評価が少なくなることに注意してください。
+</p>
+<h3>18.3.3 神経常微分方程式フロー(Neural ODE flows)</h3>
+<p>
+<!--
+We can make use of a neural ordinary differential equation to define an alternative approach to the construction of tractable normalizing flow models. A neural ODE defines a highly flexible transformation from an input vector z(0) to an output vector z(T) in terms of a differential equation of the form
+-->
+ニューラル常微分方程式を利用して, 扱いやすい正規化フローモデルの構築に対する代替アプローチを定義できます。ニューラルODEは, 次の形式の微分方程式によって, 入力ベクトルz(0)から出力ベクトルz(T)への非常に柔軟な変換を定義します。
+\[
+\frac{d\mathbf z(t)}{dt}=\mathbf f(\mathbf z(t),\mathbf w) \tag{18.27}
+\]
+</p><p>
+<!--
+If we define a base distribution over the input vector p(z(0)) then the neural ODE propagates this forward through time to give a distribution p(z(t)) for each value of t, leading to a distribution over the output vector p(z(T)). Chen et al. (2018) showed that for neural ODEs, the transformation of the density can be evaluated by integrating a differential equation given by
+-->
+入力ベクトル \(p(\mathbf z(0))\) に対して基本分布を定義すると, ニューラルODEはこれを時間をかけて前方に伝播して \(t\) の各値に対して分布 \(p(\mathbf z(t))\) を与え, 出力ベクトル \(p(\mathbf z(T))\) 全体にわたる分布を導き出します。Chenら(2018)は, ニューラルODEの場合, 次の微分方程式を積分することで密度の変換を評価できることを示しました。
+\[
+\frac{d \ln(\mathbf z(t))}{dt}=-Tr\left(\frac{∂\mathbf f}{∂\mathbf z(t)}\right) \tag{18.28}
+\]
+<!--
+where ∂f/∂z represents the Jacobian matrix with elements ∂fi/∂zj. This integration can be performed using standard ODE solvers. Likewise, samples from this density can be obtained by sampling from the base density p(z(0)), which is chosen to be a simple distribution such as a Gaussian, and propagating the values to the output by integrating (18.27) again using the ODE solver. The resulting framework is known as a continuous normalizing flow and is illustrated in Figure 18.6. Continuous normalizing flows can be trained using the adjoint sensitivity method used for neural ODEs, which can be viewed as the continuous time equivalent of backpropagation. 
+-->
+ここで, \(∂\mathbf f/∂\mathbf z\) は, 要素 \(∂f_i/∂z_j\) を持つヤコビアン行列を表します。この統合は, 標準のODEソルバーを使用して実行できます。同様に, この密度からのサンプルは, ガウス分布などの単純な分布になるように選択された基本密度 \(p(\mathbf z(0))\) からサンプリングし, ODEソルバーを使って(18.27)を再度積分することで値を出力に伝播することによって取得できます。結果として得られるフレームワークは連続正規化フローとして知られており, 図18.6に示されています。連続正規化フローは, ニューラル ODEに使用される随伴感度法を使用してトレーニングできます。これは, バックプロパゲーションと同等の連続時間とみなすことができます。
+</p><p>
+<!--
+Figure 18.6 Illustration of a continuous normalizing flow showing a simple Gaussian distribution at t = 0 that is continuously transformed into a multi-modal distribution at t = T. The flow lines show how points along the z-axis evolve as a function of t. Where the flow lines spread apart the density is reduced, and where they move together the density is increased.
+-->
+</p>
+<center><img src="images/fig18_6.png"></center>
+<p class="margin-large">
+図18.6。 \(t = T\) で多峰性分布に連続的に変換される \(t = 0\) での単純なガウス分布を示す連続正規化フローの図。フロー線は, \(z\)-軸に沿った点が \(t\) の関数としてどのように変化するかを示しています。フロー線が離れて広がるところでは密度が減少し, フロー線が一緒に動くところでは密度が増加します。
+</p><p>
+<!--
+Since (18.28) involves the trace of the Jacobian rather than the determinant, which arises in discrete normalizing flows, it might appear to be more computationally efficient. In general, evaluating the determinant of a D×D matrix requires O(D3) operations, whereas evaluating the trace requires O(D) operations. However, if the determinant is lower diagonal, as in many forms of normalizing flow, then the determinant is the product of the diagonal terms and therefore also involves O(D) operations. Since evaluating the individual elements of the Jacobian matrix requires a separate forward propagation, which itself requires O(D) operations, evaluating the trace or the determinant (for a lower triangular matrix) takes O(D2) operations overall. However, the cost of evaluating the trace can be reduced to O(D) by using Hutchinson's trace estimator (Grathwohl et al., 2018), which for a matrix A takes the form
+-->
+(18.28)には, 離散正規化フローで生じる行列式ではなくヤコビアンのトレースが含まれるため, 計算効率が高いように見えるかもしれません。一般に, \(D×D\) 行列の行列式の評価には \(\mathcal O(D^3)\) 回の操作が必要ですが, トレースの評価には \(\mathcal O(D)\) 回の操作が必要です。ただし, 正規化フローの多くの形式のように, 行列式が下側対角線である場合, 行列式は対角項の積であるため, \(\mathcal O(D)\) 演算も含まれます。ヤコビ行列の個々の要素を評価するには別個の順伝播が必要であり, それ自体が \(\mathcal O(D)\) 演算を必要とするため, トレースまたは行列式(下三角行列の場合)の評価には全体で \(\mathcal O(D^2)\) 演算がかかります。ただし, Hutchinsonのトレース推定器(Grathwohl et al., 2018)を使用すると, トレースの評価コストを \(\mathcal O(D)\) に削減できます。行列 \(A\) の場合, この推定量は次の形式になります。
+\[
+Tr(\mathbf A)=\mathbb E_\boldsymbol{\epsilon}[\boldsymbol{\epsilon}^T \mathbf A\boldsymbol{\epsilon}] \tag{18.29}
+\]
+<!--
+where ε is a random vector whose distribution has zero mean and unit covariance, for example, a Gaussian N(0, I). For a specific ε, the matrix-vector product Aε can be evaluated efficiently in a single pass using reverse-mode automatic differentiation. We can then approximate the trace using a finite number of samples in the form
+-->
+ここで, \(\epsilon\) は, 分布がゼロ平均と単位共分散を持つランダムベクトル(ガウス \(\mathcal N(\mathbf 0, \mathbf I)\) など)です。特定の \(\epsilon\) については, 逆モード自動微分を使用して, 行列とベクトルの積 \(\mathbf A\epsilon\) を単一パスで効率的に評価できます。次に, 次の形式で有限数のサンプルを使用してトレースを近似できます。
+\[
+Tr(\mathbf A)\simeq\frac{1}{M}\sum_{m=1}^M\boldsymbol{\epsilon}_m^T\mathbf A\boldsymbol{\epsilon}_m \tag{18.30}
+\]
+</p><p>
+<!--
+In practice we can set M = 1 and just use a single sample, which is refreshed for each new data point. Although this is a noisy estimate, this might not be too significant since it forms part of a noisy stochastic gradient descent procedure. Importantly it is unbiased, meaning that the expectation of the estimator is equal to the true value.
+-->
+実際には, \(M = 1\) に設定し, 新しいデータポイントごとに更新される1つのサンプルを使用するだけです。これはノイズの多い推定値ですが, ノイズの多い確率的勾配降下法手順の一部を形成するため, それほど重要ではない可能性があります。重要なのは, それが不偏であること, つまり推定量の期待値が真の値に等しいことです。
+</p><p>
+<!--
+Significant improvements in training efficiency for continuous normalizing flows can be achieved using a technique called flow matching (Lipman et al., 2022). This brings normalizing flows closer to diffusion models and avoids the need for back-propagation through the integrator while significantly reducing memory requirements and enabling faster inference and more stable training.
+-->
+フローマッチングと呼ばれる技術を使用すると, 連続正規化フローのトレーニング効率を大幅に向上させることができます (Lipman et al., 2022)。これにより, 正規化フローが拡散モデルに近づき, インテグレータによる逆伝播の必要性が回避されると同時に, メモリ要件が大幅に削減され, より高速な推論とより安定したトレーニングが可能になります。
+</p>
+<h2>演習問題</h2>
+( )内は難易度：★(易)～★★★(難)
+<!--
+<h2>Exercises</h2>
+-->
+<h3>18.1 (★★)</h3> 
+</p><p>
+<!--
+Consider a transformation x = f(z) along with its inverse z = g(x). By differentiating x = £(g(x)), show that
+-->
+変換 \(\mathbf x = \mathbf f(\mathbf z)\) とその逆変換 \(\mathbf z = \mathbf g(\mathbf x)\) を考えます。\(\mathbf x = \mathbf f(\mathbf g(\mathbf x))\) を微分することによって, 次のことを示せ。
+\[
+\mathbf J\mathbf K = \mathbf I \tag{18.31}
+\]
+<!--
+where I is the identity matrix, and J and K are matrices with elements
+-->
+ここで, \(\mathbf I\) は単位行列, \(\mathbf J\) と \(\mathbf K\) は以下の要素を含む行列です。
+\[
+J_{ij}=\frac{∂g_i}{∂x_j},　K_{ij}=\frac{∂f_i}{∂z_j} \tag{18.32}
+\]
+<!--
+Using the result that the determinant of a product of matrices is the product of their determinants, show that
+-->
+行列の積の行列式が行列式の積であるという結果を使用して, 次のことを示せ。
+\[
+\det(\mathbf J)=\frac{1}{\det(\mathbf K)} \tag{18.33}
+\]
+<!--
+Hence, show that the formula (18.1) for the transformation of a density under a change of variables can be rewritten as
+-->
+したがって, 変数の変化の下での密度の変換の式(18.1)は次のように書き換えられることを示せ。
+\[
+p_x (\mathbf x)=p_{\mathbf z}(\mathbf g(\mathbf x)) |\det\mathbf K|^{-1} \tag{18.34}
+\]
+<!--
+where K is evaluated at z = g(x).
+-->
+ここで, \(\mathbf K\) は \(\mathbf z = \mathbf g(\mathbf x)\) で評価されます。
+</p>
+<h3>18.2 (★)</h3> 
+<p>
+<!--
+Consider a sequence of invertible transformations of the form,
+-->
+次の形式の一連の可逆変換を考えます。
+\[
+\mathbf x=\mathbf f_1 (\mathbf f_2 (⋯\mathbf f_{M-1} (\mathbf f_M (\mathbf z))⋯)) \tag{18.35}
+\]
+<!--
+Show that the inverse function is given by
+-->
+逆関数が次のように与えられることを示せ。
+\[
+\mathbf z=\mathbf f_M^{-1} (\mathbf f_{M-1}^{-1} (⋯\mathbf f_2^{-1} (\mathbf f_1^{-1} (\mathbf x))⋯)) \tag{18.36}
+\]
+</p>
+<h3>18.3 (★)</h3>
+<p> 
+<!--
+Consider a linear change of variables of the form
+-->
+次の形式の変数の線形変化を考えます。
+\[
+\mathbf x=\mathbf z+\mathbf b \tag{18.37}
+\]
+<!--
+Show that the Jacobian of this transformation is the identity matrix. Interpret this result by comparing the volume of a small region of z-space with the volume of the corresponding region of x-space.
+-->
+この変換のヤコビアンが単位行列であることを示せ。\(\mathbf z\) 空間の小さな領域の体積を \(\mathbf x\) 空間の対応する領域の体積と比較して, この結果を解釈します。
+</p>
+<h3>18.4 (★★)</h3> 
+<p>
+<!--
+Show that the Jacobian of the autoregressive normalizing flow transformation given by (18.18) is a lower triangular matrix. The determinant of such a matrix is given by the product of the terms on the leading diagonal and is therefore easily evaluated.
+-->
+(18.18)で与えられる自己回帰正規化フロー変換のヤコビアンが下三角行列であることを示せ。このような行列の行列式は, 先頭の対角要素の項の積によって与えられるため, 簡単に評価できます。
+</p>
+<h3>18.5 (★) </h3>
+<p>
+<!--
+Consider the forward propagation equation for a residual network given by (18.21) in which we consider a small increment ε in the ‘time’ variable t:
+-->
+(18.21)で与えられる残差ネットワークの順伝播方程式を考えます。この式では, 「時間」変数 \(t\) の小さな増分\(\epsilon\) を考慮します。
+\[
+\mathbf z^{(t+ε)}=\mathbf z^{(t)}+ε\mathbf f(\mathbf z^{(t)},\mathbf w) \tag{18.38}
+\]
+<!--
+Here the additive contribution from the neural network is scaled by ε. Note that (18.21) corresponds to the case ε= 1. By taking the limit ε→ 0, derive the forward propagation differential equation given by (18.22)
+-->
+ここで, ニューラルネットワークからの追加の寄与は \(\epsilon\) でスケールされます。(18.21)は \(\epsilon= 1\) の場合に対応することに注意してください。極限 \(\epsilon\to 0\) を取ることにより, (18.22)で与えられる順伝播微分方程式を導出します。
+</p>
+<h3>18.6 (★★) </h3>
+<p>
+<!--
+In this exercise and the next we provide an informal derivation of the backpropagation and gradient evaluation equations for a neural ODE. A more formal derivation of these results can be found in Chen ef al. (2018). Write down the backpropagation equation corresponding to the forward equation (18.38). By taking the limit ε→ 0, derive the backward propagation equation (18.25), where a(t) is defined by (18.24).
+-->
+この演習と次の演習では, ニューラルODEのバックプロパゲーションと勾配評価方程式の非公式な導出を提供します。これらの結果のより正式な導出は, Chenら(2018年)で見ることができます。順方程式(18.38)に対応する逆伝播方程式を書け。極限 \(\epsilon\to 0\) を取ることにより, 逆伝播方程式(18.25)を導き出します。ここで, \(a(t)\) は(18.24)によって定義されます。
+</p>
+<h3>18.7 (★★) </h3>
+<p>
+<!--
+By making use of the result (8.10), write down an expression for the gradient of a loss function L(z(T)) for a multilayered residual network defined by (18.38) in which all layers share the same parameter vector w. By taking the limit ε→ 0, derive the equation (18.26) for the derivative of the loss function.
+-->
+結果(8.10)を利用して, (18.38)で定義され, すべての層が同じパラメータベクトルwを共有する多層残差ネットワークの損失関数 \(L(\mathbf z(T))\) の勾配の式を書け。極限 \(\epsilon\to 0\) を取ることにより, 損失関数の微分方程式(18.26)を導け。
+</p>
+<h3>18.8 (★★★) </h3>
+<p>
+<!--
+In this exercise we give an informal derivation of (18.28) for one-dimensional distributions. Consider a distribution q(z) at time t that is transformed to a new distribution p(x) at time t + δt as a result of a transformation from z to x. Also consider nearby values z and z + Δz along with corresponding values x and x + Δx as shown in Figure 18.7. First, write down an equation that expresses that the probability mass in the interval Δz is the same as that in the interval Δx. Second, write down an equation that shows how the probability density changes in going from t to t-+δt, expressed in terms of the derivative dq(t)/ dt. Third, write down an equation for Δx in terms of Δz by introducing the function f(z) = dz/ dt. Finally, by combining these three equations and taking the limit δt→ 0, show that
+-->
+この演習では, 1次元分布に対する(18.28)の非公式な導出を行います。時間 \(t\) における分布 \(q(z)\) が, \(z\) から \(x\) への変換の結果として時間 \(t +δt\) における新しい分布 \(p(x)\) に変換されると考えます。また, 図18.7に示すように, 近くの値 \(z\) および \(z +Δz\) を, 対応する値 \(x\) および \(x +Δx\) とともに考慮します。まず, 区間 \(Δz\) の確率質量が区間 \(Δx\) の確率質量と同じであることを表す式を書け。次に, 確率密度が \(t\) から \(t-+δt\) にどのように変化するかを示す方程式を, 導関数 \(dq(t)/ dt\) で表して書け。3 番目に, 関数 \(f(z) = dz/ dt\) を導入して, \(Δz\) に関して \(Δx\) の方程式を書け。最後に, これら3つの方程式を結合し, 極限 \(δt→ 0\) を取ることによって, 次のことが示せ。
+\[
+\frac{d}{dt}\ln q(z)=-f^\prime(z) \tag{18.39}
+\]
+<!--
+which is the one-dimensional version of (18.28).
+これは(18.28)の1次元バージョンです。
+<!--
+Figure 18.7 Schematic illustration of the transformation of probability densities used to derive the equation for continuous normalizing flows in one dimension.
+-->
+</p>
+<center><img src="images/fig18_7.png"></center>
+<p class="margin-large">
+図18.7。1次元での連続正規化フローの方程式を導出するために使用される確率密度の変換の概略図。
+</p>
+<h3>18.9 (★★)</h3>
+<p>
+<!--
+ The flow lines in Figure 18.6 were plotted by taking a set of equally spaced values and using the inverse of the cumulative distribution function at each value of t to plot the corresponding points in z-space. Show that this is equivalent to using the differential equation (18.27) to compute the flow lines where f is defined by (18.28).
+-->
+図18.6のフロー線は, 等間隔の値のセットを取得し, tの各値での累積分布関数の逆関数を使用して, Z空間内の対応する点をプロットすることによって得られました。これは, fが(18.28)で定義される流線を計算するために微分方程式(18.27)を使用するのと同等であることを示せ。
+</p>
+<h3>18.10 (★)</h3>
+<p>
+<!--
+ Using the differential equation (18.27) write down an expression for the base density of a continuous normalizing flow in terms of the output density, expressed as an integral over t. Hence, by making use of the fact that changing the sign of a definite integral is equivalent to swapping the limits on that integral, show that the computational cost of inverting a continuous normalizing flow is the same as that needed to evaluate the forward flow.
+-->
+微分方程式(18.27)を使用して, 出力密度に関して連続正規化流の基本密度の式を書き, tの積分として表します。したがって, 定積分の符号を変更することは, その積分の極限を交換することと同等であるという事実を利用して, 連続正規化フローを反転する計算コストが順方向フローの評価に必要な計算コストと同じであることを示せ。
+</p>
+<h3>18.11(★)</h3> 
+<p>
+<!--
+Show that the expectation of the right-hand side in the Hutchinson trace estimator (18.30) is equal to Tr(A) for any value of M. This shows that the estimator is unbiased.
+-->
+ハッチンソン追跡推定器(18.30)の右側の期待値が, Mの任意の値に対して \(Tr(A)\) に等しいことを示せ。これは, 推定器に偏りがないことを示しています。
+
+</p>
+
+    </body>
+</html>
