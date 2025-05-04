@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+        <meta charset="utf-8" />
+        <title>13章</title>
+        <style type="text/css">
+            p
+            {
+                padding-left: 2em;
+            }
+            .margin-large
+            {
+                margin-left: 30px;
+            }
+           .margin-abstract {
+               margin-left: 60px; /* 左マージンを広くする */
+               margin-right: 60px; /* 右マージンを広くする */
+           }
+        </style>
+    <style>
+        .two-columns {
+            display: flex;
+            flex-direction: row;
+            gap: 20px; /* 列間のスペース */
+        }
+        .column {
+            flex: 1; /* 各列が均等に幅を取る */
+        }
+    </style>
+<style>
+.three-columns {
+  display: flex;
+  gap: 10px; /* 列間の余白を設定 */
+}
+.column {
+  flex: 1; /* 各列の幅を均等にする */
+  padding: 10px; /* 内側の余白を設定 */
+}
+</style>
+    <style>
+        .styleRef { 
+            text-indent: -40px; /* 最初の行の字下げを逆方向に */
+            margin-left: 10px; /* 2行目以降の字下げを調整 */
+            ul {
+                  list-style-type: none; /* 箇条書き記号を非表示 */
+                  padding-left: 40px; /* 全体の左余白 */
+            }
+            li {
+            }
+        }
+    </style>
+    <style>
+        .styleBullet { 
+            text-indent: -20px; /* 最初の行の字下げを逆方向に */
+            margin-left: 30px; /* 2行目以降の字下げを調整 */
+            ul {
+                  list-style-type: none; /* 箇条書き記号を非表示 */
+                  padding-left: 0px; /* 全体の左余白 */
+            }
+            li {
+            }
+        }
+    </style>
+    <style>
+            ol
+            {
+                margin-left: 30px;
+            }
+            ul
+            {
+                margin-left: 30px;
+            }
+    </style>
+    <style>
+        .thin-line {
+            margin: 0; 
+            margin-left:2em;
+            border: 0;
+            height: 1px;
+            background-color: gray;
+        }
+
+        .thick-line {
+            margin: 0; 
+            margin-left:2em;
+            border: 0;
+            height: 2px;
+            background-color: black;
+        }
+    </style>
+    <style>
+        .highlight {
+            color: red; /* 好きな色に変更してください */
+        }
+    </style>
+    </head>
+    <body>
+        <h1><center>13 Graph Neural Networks</center></h1>
+<p>
+<!--
+In previous chapters we have encountered structured data in the form of sequences and images, corresponding to one-dimensional and two-dimensional arrays of variables respectively. More generally, there are many types of structured data that are best described by a graph as illustrated in Figure 13.1. In general a graph consists of a set of objects, known as nodes, connected by edges. Both the nodes and the edges can have data associated with them. For example, in a molecule the nodes and edges are associated with discrete variables corresponding to the types of atom (carbon, nitrogen, hydrogen, etc.) and the types of bonds (single bond, double bond, etc.). For a rail network, each railway line might be associated with a continuous variable given by the average journey time between two cities. Here we are assuming that the edges are symmetrical, for example that the journey time from London to Cambridge is the same as the journey time from Cambridge to London. Such edges are depicted by undirected links between the nodes. For the worldwide web the edges are directed since if there is a hyperlink on page A that points to page B there is not necessarily a hyperlink on page B pointing back to page A.
+-->
+前の章では, 変数の1次元配列と2次元配列にそれぞれ対応する, シーケンスとイメージの形式の構造化データについて説明しました。より一般的には, 図13.1に示すように, グラフで表すのが最も適切な構造化データの種類が多数あります。一般に, グラフはエッジで接続されたノードと呼ばれるオブジェクトの集合で構成されます。ノードとエッジの両方にデータを関連付けることができます。たとえば, 分子では, ノードとエッジは, 原子の種類(炭素, 窒素, 水素など)と結合の種類(単結合, 二重結合など)に対応する離散変数に関連付けられます。鉄道ネットワークの場合, 各鉄道路線は2つの都市間の平均移動時間によって与えられる連続変数に関連付けられる場合があります。ここでは, エッジが対称であると仮定します。たとえば, ロンドンからケンブリッジまでの移動時間は, ケンブリッジからロンドンまでの移動時間と同じです。このようなエッジは, ノード間の無向リンクによって表されます。ワールドワイドウェブの場合, ページAにページBを指すハイパーリンクがある場合, ページBにページAに戻るハイパーリンクがあるとは限らないため, エッジは方向付けされます。
+</p>
+<center><img src="images/fig13_1.png"></center>
+<p class="margin-large">
+<!--
+Figure 13.1 Three examples of graph-structured data: (a) the caffeine molecule consisting of atoms connected by chemical bonds, (b) a rail network consisting of cities connected by railway lines, and (c) the worldwide web consisting of pages connected by hyperlinks.
+-->
+図13.1　グラフ構造データの3つの例: (a)化学結合で接続された原子で構成されるカフェイン分子, (b)鉄道線で接続された都市で構成される鉄道網, (c)によって接続されたページで構成されるワールドワイドウェブハイパーリンク。
+</p><p>
+<!--
+Other examples of graph-structured data include a protein interaction network, in which the nodes are proteins and the edges express how strongly pairs of proteins interact, an electrical circuit where the nodes are components and the edges are conductors, or a social network where the nodes are people and the edges are ‘friendships'. More complex graphical structures are also possible, for example the knowledge graph inside a company comprises multiple different kinds of nodes such as people, documents, and meetings, along with multiple kinds of edges capturing different properties such as a person being present at a meeting or a document referencing another document.
+-->
+グラフ構造データの他の例には, ノードがタンパク質でエッジがタンパク質のペアの相互作用の強さを表すタンパク質相互作用ネットワーク, ノードがコンポーネントでエッジが導体である電気回路, またはソーシャルネットワークが含まれます。ノードは人々であり, エッジは '友情' です。より複雑なグラフィック構造も可能です。たとえば, 企業内のナレッジグラフは, 人, 文書, 会議などの複数の異なる種類のノードと, 会議に出席している人や別のドキュメントを参照するドキュメントなどのさまざまなプロパティをキャプチャする複数の種類のエッジで構成されます。
+</p><p>
+<!--
+In this chapter we explore how to apply deep learning to graph-structured data. We have already encountered an example of structured data when we discussed images, in which the individual elements of an image data vector x correspond to pixels ona regular grid. An image is therefore a special instance of graph-structured data in which the nodes are the pixels and the edges describe which pixels are adjacent. Convolutional neural networks (CNNs) take this structure into account, incorporating prior knowledge of the relative positions of the pixels, together with the equivariance of properties such as segmentation and the invariance of properties such as classification. We will use CNNs for images as a source of inspiration to construct more general approaches to deep learning for graphical data known as graph neural networks (Zhou et al., 2018; Wu et al., 2019: Hamilton, 2020; Veliékovié, 2023). We will see that a key consideration when applying deep learning to graph-structured data is to ensure either equivariance or invariance with respect to a reordering of the nodes in the graph.
+-->
+この章では, 深層学習をグラフ構造データに適用する方法を検討します。画像について説明したときに, 画像データベクトル \(\mathbf x\) の個々の要素が規則的なグリッド上のピクセルに対応する構造化データの例にすでに遭遇しました。したがって, 画像は, ノードがピクセルであり, エッジがどのピクセルが隣接しているかを表すグラフ構造データの特別なインスタンスです。畳み込みニューラルネットワーク(CNN)はこの構造を考慮し, ピクセルの相対位置に関する事前知識を, セグメンテーションなどのプロパティの等変性および分類などのプロパティの不変性とともに組み込みます。 私たちは, グラフ ニューラル ネットワークとして知られるグラフィカル データの深層学習へのより一般的なアプローチを構築するためのインスピレーション ソースとして画像の CNN を使用します(Zhou et al., 2018; Wu et al., 2019: Hamilton, 2020; Veliékovié, 2023) 。 深層学習をグラフ構造データに適用する際の重要な考慮事項は, グラフ内のノードの並べ替えに関して等変性または不変性を確保することであることがわかります。
+</p>
+<h2>13.1. グラフ上の機械学習</h2>
+<!--
+<h2>13.1. Machine Learning on Graphs</h2>
+-->
+<p><!--
+There are many kinds of applications that we might wish to address using graph-structured data, and we can group these broadly according to whether the goal is to predict properties of nodes, of edges, or of the whole graph. An example of node prediction would be to classify documents according to their topic based on the hyperlinks and citations between the documents.
+-->
+グラフ構造データを使用して対処したいアプリケーションは数多くありますが, 目的がノードのプロパティ, エッジのプロパティ, またはグラフ全体のプロパティの予測であるかどうかに応じて, これらを大まかにグループ化できます。ノード予測の例としては, ドキュメント間のハイパーリンクと引用に基づいてトピックに従ってドキュメントを分類することが挙げられます。
+</p><p>
+<!--
+Regarding edges we might, for example, know some of the interactions in a protein network and would like to predict the presence of any additional ones. Such tasks are called edge prediction or graph completion tasks. There are also tasks where the edges are known in advance and the goal is to discover clusters or ‘communities' within the graph.
+-->
+エッジに関しては, たとえば, タンパク質ネットワーク内の相互作用の一部を知っており, 追加の相互作用の存在を予測したい場合があります。このようなタスクは, エッジ予測タスクまたはグラフ補完タスクと呼ばれます。エッジが事前にわかっていて, グラフ内のクラスターまたは 'コミュニティ' を発見することが目的のタスクもあります。
+</p><p>
+<!--
+Finally, we may wish to predict properties that relate to the graph as a whole. For example, we might wish to predict whether a particular molecule is soluble in water. Here instead of being given a single graph we will have a data set of different graphs, which we can view as being drawn from some common distribution, in other words we assume that the graphs themselves are independent and identically distributed. Such tasks can be considered as graph regression or graph classification tasks.
+-->
+最後に, グラフ全体に関連するプロパティを予測したい場合があります。たとえば, 特定の分子が水に溶けるかどうかを予測したい場合があります。ここでは, 単一のグラフが与えられる代わりに, いくつかの共通の分布から引き出されたものとみなすことができる, 異なるグラフのデータセットを用意します。言い換えれば, グラフ自体は独立しており, 同一に分布していると仮定します。このようなタスクは, グラフ回帰タスクまたはグラフ分類タスクとみなすことができます。
+</p><p>
+<!--
+For the molecule solubility classification example, we might be given a labelled training set of molecules, along with a test set of new molecules whose solubility needs to be predicted. This is a standard example of an inductive task of the kind we have seen many times in previous chapters. However, some graph prediction examples are transductive in which we are given the structure of the entire graph along with labels for some of the nodes and the goal is to predict the labels of the remaining nodes. An example would be a large social network in which our goal is to classify each node as either a real person or an automated bot. Here a small number of nodes might be manually labelled, but it would be prohibitive to investigate every node individually in a large and ever-changing social network. During training, we therefore have access to the whole graph along with labels for a subset of the nodes, and we wish to predict the labels for the remaining nodes. This can be viewed as a form of semi-supervised learning.
+-->
+分子の溶解度分類の例では, ラベル付けされた分子のトレーニングセットと, 溶解度を予測する必要がある新しい分子のテストセットが与えられる場合があります。これは, これまでの章で何度も見てきた種類の帰納タスクの標準的な例です。ただし, 一部のグラフ予測例は変換的であり, 一部のノードのラベルとともにグラフ全体の構造が与えられ, 残りのノードのラベルを予測することが目標となります。例としては, 各ノードを実際の人物か自動ボットとして分類することが目標である大規模なソーシャルネットワークが挙げられます。ここでは, 少数のノードに手動でラベルを付けることができますが, 大規模で常に変化するソーシャルネットワーク内のすべてのノードを個別に調査するのは法外です。したがって, トレーニング中に, ノードのサブセットのラベルとともにグラフ全体にアクセスでき, 残りのノードのラベルを予測したいと考えます。これは, 半教師あり学習の一種とみなすことができます。
+</p><p><!--
+As well as solving prediction tasks directly, we can also use deep learning on graphs to discover useful internal representations that can subsequently facilitate a range of downstream tasks. This is known as graph representation learning. For example we could seek to build a foundation model for molecules by training a deep leaning system on a large corpus of molecular structures. The goal is that once trained, such a foundation model can be fine-tuned to specific tasks by using a small, labelled data set.
+-->
+予測タスクを直接解決するだけでなく, グラフ上で深層学習を使用して, その後のさまざまな下流タスクを容易にする有用な内部表現を発見することもできます。これはグラフ表現学習として知られています。たとえば, 分子構造の大規模なコーパス上で深層学習システムをトレーニングすることにより, 分子の基礎モデルを構築しようとすることができます。目標は, このような基礎モデルを一度トレーニングすると, ラベル付きの小さなデータセットを使用して特定のタスクに合わせて微調整できるようにすることです。
+</p><p><!--
+Graph neural networks define an embedding vector for each of the nodes, usually initialized with the observed node properties, which are then transformed through a series of learnable layers to create a learned representation. This is analogous to the way word embeddings, or tokens, are processed through a series of layers in the transformer to give a representation that better captures the meaning of the words in the context of the rest of the text. Graph neural networks can also use learned embeddings associated with the edges and with the graph as a whole.
+-->
+グラフニューラルネットワークは, 各ノードの埋め込みベクトルを定義します。これは通常, 観察されたノードプロパティで初期化され, 一連の学習可能な層を通じて変換されて, 学習された表現が作成されます。これは, 単語の埋め込み(トークン)がトランスフォーマーの一連のレイヤーを介して処理され, テキストの残りの部分のコンテキストで単語の意味をよりよく捉えた表現を提供する方法に似ています。グラフニューラルネットワークは, エッジおよびグラフ全体に関連付けられた学習された埋め込みを使用することもできます。
+</p>
+<h3>13.1.1. グラフのプロパティ</h3>
+<!--
+<h3>13.1.1. Graph properties</h3>
+-->
+<p><!--
+
+In this chapter we will focus on simple graphs where there is at most one edge between any pair of nodes, where the edges are undirected, and where there are no self-edges that connect a node to itself. This suffices to introduce the key concepts of graph neural networks, and it also encompasses a wide range of practical applications. These concepts can then be applied to more complex graphical structures.
+-->
+この章では, ノードのペア間にエッジが多くても 1 つしかなく, エッジが無向で, ノードをそれ自体に接続する自己エッジが存在しない単純なグラフに焦点を当てます。 これはグラフ ニューラル ネットワークの主要な概念を紹介するのに十分であり, 広範な実用的なアプリケーションも網羅しています。 これらの概念は, より複雑なグラフィック構造に適用できます。
+</p><p><!--
+We begin by introducing some notation associated with graphs and by defining some important properties. A graph G = (V, E) consists of a set of nodes or vertices, denoted by V, along with a set of edges or links, denoted by E. We index the nodes by n = 1,....N, and we write the edge from node n to node m as (n, m). If two nodes are linked by an edge they are called neighbours, and the set of all neighbours of node n is denoted by N(n).
+-->
+まず, グラフに関連するいくつかの表記法を導入し, いくつかの重要なプロパティを定義します。グラフ \(\mathcal G = (\mathcal V, \mathcal E)\) は, \(\mathcal V\) で示されるノードまたは頂点の集合と, \(\mathcal E\) で示されるエッジまたはリンクの集合で構成されます。\(n = 1,...,N\) でノードにインデックスを付け, ノード \(n\) からノード \(m\) までのエッジを \((n, m)\) と記します。2つのノードがエッジによってリンクされている場合, それらは隣接ノードと呼ばれ, ノード \(n\) のすべての隣接ノードの集合は \(\mathcal N(n)\) で示されます。
+</p><p><!--
+In addition to the graph structure, we usually also have observed data associated with the nodes. For each node n we can represent the corresponding node variables as a D-dimensional column vector xn and we can group these into a data matrix X. of dimensionality N×D in which row n is given by xnT. There may also be data variables associated with the edges in the graph, although to start with we will focus just on node variables.
+-->
+グラフ構造に加えて, 通常はノードに関連付けられた観測データも存在します。各ノード \(n\) について, 対応するノード変数を \(D\) 次元の列ベクトル \(\mathbf x_n\) として表すことができ, これらを次元 \(N×D\) のデータ行列 \(X\) にグループ化できます。行 \(n\) は \(\mathbf x_n^T\) で与えられます。グラフのエッジに関連付けられたデータ変数も存在する可能性がありますが, 最初はノード変数だけに焦点を当てます。
+</p>
+<h3>13.1.2 隣接行列</h3>
+<!--
+<h3>13.1.2 Adjacency matrix</h3>
+-->
+<p><!--
+A convenient way to specify the edges in a graph is to use an adjacency matrix denoted by A. To define the adjacency matrix we first have to choose an ordering for the nodes. If there are N' nodes in the graph, we can index them using n = 1,..., N. The adjacency matrix has dimensions N×N and contains a 1 in every location n, m for which there is an edge going from node n to node m, with all other entries being 0. For graphs with undirected edges, the adjacency matrix will be symmetric since the presence of an edge from node n to node m implies that there is also an edge from node m to node n, and therefore Amn = Anm for all n and m. An example of an adjacency matrix is shown in Figure 13.2.
+-->
+グラフ内のエッジを指定する便利な方法は, \(A\) で示される隣接行列を使用することです。隣接行列を定義するには, まずノードの順序を選択する必要があります。グラフ内に \(N\) 個のノードがある場合, \(n = 1,..., N\) を使用してインデックスを付けることができます。隣接行列の次元は \(N×N\) で, エッジが存在するすべての位置n, \(m\) に1が含まれます。ノード \(n\) からノード \(m\) まで, 他のすべてのエントリは 0 です。無向エッジを持つグラフの場合, ノード \(n\) からノード \(m\) へのエッジの存在はノード \(m\) からノード \(n\) へのエッジも存在することを意味するため, 隣接行列は対称になります。したがって, すべての \(n\) と \(m\) について \(A_{mn}= A_{nm}\) となります。隣接行列の例を図13.2に示します。
+</p><p><!--
+Figure 13.2 An example of an adjacency matrix showing (a) an example of a graph with five nodes, (b) the associated adjacency matrix for a particular choice of node order, and (c) the adjacency matrix corresponding to a different choice for the node order.
+-->
+</p>
+<center><img src="images/fig13_2.png"></center>
+<p class="margin-large">
+図13.2　隣接行列の例。(a)5つのノードを含むグラフの例, (b)ノード順序の特定の選択に関連する隣接行列, および (c)ノード順序の別の選択に対応する隣接行列を示します。
+</p><p><!--
+Since the adjacency matrix defines the structure of a graph, we could consider using it directly as the input to a neural network. To do this we could ‘flatten' the matrix, for example by concatenating the columns into one long column vector. However, a major problem with this approach is that the adjacency matrix depends on the arbitrary choice of node ordering, as seen in Figure 13.2. Suppose for instance that we want to predict the solubility of a molecule. This clearly should not depend on the ordering assigned to the nodes when writing down an adjacency matrix. Because the number of permutations increases factorially with the number of nodes, it is impractical to try to learn permutation invariance by using large data sets or by data augmentation. Instead, we should treat this invariance property as an inductive bias when constructing a network architecture.
+-->
+隣接行列はグラフの構造を定義するため, これをニューラルネットワークへの入力として直接使用することを検討できます。 これを行うには, たとえば列を1つの長い列ベクトルに連結することによって, 行列を'平坦化'できます。ただし, このアプローチの大きな問題は, 図13.2に示すように, 隣接行列がノードの順序の任意の選択に依存することです。たとえば, 分子の溶解度を予測したいとします。これは明らかに, 隣接行列を書き出すときにノードに割り当てられた順序に依存すべきではありません。順列の数はノードの数に応じて階乗的に増加するため, 大規模なデータセットを使用したり, データの拡張によって順列の不変性を学習しようとすることは非現実的です。代わりに, ネットワークアーキテクチャを構築するときは, この不変特性を帰納バイアスとして扱う必要があります。
+</p>
+<h3>13.1.3. 順列同値性</h3>
+<!--
+<h3>13.1.3. Permutation equivariance</h3>
+-->
+<p><!--
+We can express node label permutation mathematically by introducing the concept of a permutation matrix P, which has the same size as the adjacency matrix and which specifies a particular permutation of a node ordering. It contains a single 1 in each row and a single 1 in each column, with 0 in all the other elements, such that a 1 in position n ,m indicates that node n will be relabelled as node m after the permutation. Consider, for example, the permutation from (A, B, C, D, E) → (C, E, A, D, B) corresponding to the two choices of node ordering in Figure |The corresponding permutation matrix takes the form
+-->
+隣接行列と同じサイズを持ち, ノード順序の特定の順列を指定する順列行列 \(P\) の概念を導入することで, ノードラベルの順列を数学的に表現できます。各行に 1 つ, 各列に 1 つずつ 1 が含まれ, 他のすべての要素には 0 が含まれます。つまり, 位置 \(n ,m\) の 1 は, 置換後にノード \(n\) がノード \(m\) として再ラベル付けされることを示します。たとえば, 図のノード順序の2つの選択肢に対応する \((A, B, C, D, E) → (C, E, A, D, B)\) の順列を考えてみましょう。対応する順列行列は次の形式になります。
+\[
+\mathbf P=
+\begin{pmatrix}
+0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 \\
+1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 \\
+0 & 1 & 0 & 0 & 0
+\end{pmatrix}
+\tag{13.1}
+\]
+</p><p><!--
+We can define the permutation matrix more formally as follows. First we introduce the standard unit vector un for n = 1,...,.N. This is a column vector in which all elements are 0 except element n, which equals 1. In this notation the identity matrix is given by
+-->
+順列行列は次のようにより形式的に定義できます。まず, \(n = 1,...,N\) の標準単位ベクトル \(\mathbf u_n\) を導入します。 これは, 1 に等しい要素 \(n\) を除くすべての要素が 0 である列ベクトルです。この表記では, 単位行列は次の式で与えられます。
+\[
+\mathbf I=
+\begin{pmatrix}
+\mathbf u_1^T \\
+\mathbf u_2^T \\
+\cdots \\
+\mathbf u_N^T \\
+\end{pmatrix}
+\tag{13.2}
+\]
+</p><p><!--
+We can now introduce a permutation function π(･) that maps n to m = π(n). The associated permutation matrix is given by
+-->
+ここで, \(n\) を \(m =\pi(n)\) にマッピングする順列関数 \(\pi(･)\) を導入できます。関連する置換行列は次のように与えられます。
+\[
+\begin{pmatrix}
+\mathbf u_{\pi(1)}^T \\
+\mathbf u_{\pi(2)}^T \\
+\cdots \\
+\mathbf u_{\pi(N)}^T 
+\end{pmatrix}
+\tag{13.2}
+\]
+<!--
+When we reorder the labelling on the nodes of a graph, the effect on the corresponding node data matrix X is to permute the rows according to π(･), which can be achieved by pre-multiplication by P to give
+-->
+グラフのノードのラベル付けを並べ替えると, 対応するノードデータ行列 \(X\) に対する影響は, \(π(･)\) に従って行を並べ替えることです。これは, 次のように \(P\) を事前に乗算することで実現できます。
+\[
+\tilde{X} = PX \tag{13.4}
+\]
+<!--
+For the adjacency matrix, both the rows and the columns become permuted. Again the rows can be permuted using pre-multiplication by P whereas the columns are permuted using post-multiplication by P, giving a new adjacency matrix:
+-->
+隣接行列の場合, 行と列の両方が並べ替えられます。ここでも, 行は \(P\) による事前乗算を使用して並べ替えることができますが, 列は \(P^T\) による事後乗算を使用して並べ替えられ, 新しい隣接行列が得られます。
+\[
+\tilde{A}=PAP^T \tag{13.5}
+\]
+</p><p>
+<!--
+When applying deep learning to graph-structured data, we will need to represent the graph structure in numerical form so that it can be fed into a neural network, which requires that we assign an ordering to the nodes. However, the specific ordering we choose is arbitrary and so it will be important to ensure that any global property of the graph does not depend on this ordering. In other words, the network predictions must be invariant to node label reordering, so that
+-->
+深層学習をグラフ構造データに適用する場合, グラフ構造をニューラルネットワークに入力できるように数値形式で表現する必要があり, そのためにはノードに順序を割り当てる必要があります。ただし, 選択する特定の順序は任意であるため, グラフのグローバルプロパティがこの順序に依存しないようにすることが重要です。言い換えれば, ネットワーク予測はノードラベルの並べ替えに対して不変でなければなりません。
+\[
+y(\tilde{X},\tilde{A})=y(X,A)　不変性 \tag{13.6}
+\]
+<!--
+where y(･, ･) is the output of the network.
+-->
+ここで, \(y(･, ･)\) はネットワークの出力です。
+</p><p><!--
+We may also want to make predictions that relate to individual nodes. In this case, if we reorder the node labelling then the corresponding predictions should show the same reordering so that a given prediction is always associated with the same node irrespective of the choice of order. In other words, node predictions should be equivariant with respect to node label reordering. This can be expressed as
+-->
+個々のノードに関連する予測を行うこともできます。この場合, ノードのラベル付けを並べ替えると, 順序の選択に関係なく, 指定された予測が常に同じノードに関連付けられるように, 対応する予測も同じ並べ替えを示す必要があります。言い換えれば, ノード予測はノードラベルの並べ替えに関して等変である必要があります。これは次のように表現できます。
+\[
+y(\tilde{X}, \tilde{A})=Py(X,A)　同値性 \tag{13.7}
+\]
+<!--
+where y(･, ･) is a vector of network outputs, with one element per node.
+-->
+ここで, \(y(･, ･)\) は, ノードごとに1つの要素を持つネットワーク出力のベクトルです。
+</p>
+<h2>13.2 ニューラルメッセージパッシング</h2>
+<!--
+<h2>13.2 Neural Message-Passing</h2>
+-->
+<p><!--
+Ensuring invariance or equivariance under node label permutations is a key design consideration when we apply deep neural networks to graph-structured data. Another consideration is that we want to exploit the representational capabilities of deep neural networks and so we retain the concept of a ‘layer' as a computational transformation that can be applied repeatedly. If each layer of the network is equivariant under node reordering then multiple layers applied in succession will also exhibit equivariance, while allowing each layer of the network to be informed by the graph structure.
+-->
+ディープニューラルネットワークをグラフ構造データに適用する場合, ノードラベルの順列の下で不変性または等変性を確保することが重要な設計上の考慮事項です。もう1つの考慮事項は, ディープニューラルネットワークの表現機能を活用したいため, 繰り返し適用できる計算変換として 'レイヤー' の概念を保持していることです。ノードの並べ替えの下でネットワークの各層が等変性である場合, 連続して適用される複数の層も等変性を示し, 同時にネットワークの各層がグラフ構造によって情報を得ることができます。
+</p><p><!--
+For networks whose outputs represent node-level predictions, the whole network will be equivariant as required. If the network is being used to predict a graph-level property then a final layer can be included that is invariant to permutations of its inputs. We also want to ensure that each layer is a highly flexible nonlinear function and is differentiable with respect to its parameters so that it can be trained by stochastic gradient descent using gradients obtained by automatic differentiation.
+-->
+出力がノードレベルの予測を表すネットワークの場合, ネットワーク全体は必要に応じて等変になります。ネットワークがグラフレベルのプロパティを予測するために使用されている場合, 入力の順列に対して不変である最終層を含めることができます。また, 各層が柔軟性の高い非線形関数であり, 自動微分によって得られた勾配を使用した確率的勾配降下法によってトレーニングできるように, そのパラメーターに関して微分可能であることを確認したいと考えています。
+</p><p><!--
+Graphs come in various sizes. For example different molecules can have different numbers of atoms, so a fixed-length representation as used for standard neural networks is unsuitable. A further requirement is therefore that the network should be able to handle variable-length inputs, as we saw with transformer networks. Some graphs can be very large, for example a social network with many millions of participants, and so we also want to construct models that scale well. Not surprisingly, parameter sharing will play an important role, both to allow the invariance and equivariance properties to be built into the network architecture but also to facilitate scaling to large graphs.
+-->
+グラフにはさまざまなサイズがあります。たとえば, 分子が異なれば原子の数も異なる可能性があるため, 標準的なニューラルネットワークで使用されるような固定長の表現は不適切です。したがって, さらなる要件は, トランスフォーマーネットワークで見たように, ネットワークが可変長入力を処理できる必要があることです。グラフによっては, 何百万人もの参加者がいるソーシャルネットワークなど, 非常に大きくなる場合があるため, 適切に拡張できるモデルを構築することも必要です。 当然のことですが, パラメータの共有は, 不変性と等変性のプロパティをネットワーク アーキテクチャに組み込むことができるようにするだけでなく, 大きなグラフへのスケーリングを容易にするためにも重要な役割を果たします。
+</p>
+<h3>13.2.1. 畳み込みフィルタ</h3>
+<!--
+<h3>13.2.1. Convolutional filters</h3>
+-->
+<p><!--
+To develop a framework that meets all of these requirements, we can seek inspiration from image processing using convolutional neural networks. First note that an image can be viewed as a specific instance of graph-structured data, in which the nodes are the pixels and the edges represent pairs of pixels that are adjacent in the image, where adjacency includes nodes that are diagonally adjacent as well as those that are horizontally or vertically adjacent.
+-->
+これらすべての要件を満たすフレームワークを開発するには, 畳み込みニューラルネットワークを使用した画像処理からインスピレーションを得ることができます。まず, 画像はグラフ構造データの特定のインスタンスとして見ることができることに注意してください。ノードはピクセルであり, エッジは画像内で隣接するピクセルのペアを表します。隣接には, 水平または垂直に隣接するノードだけでなく斜めに隣接するノードも含まれます。
+</p><p><!--
+In a convolutional network, we make successive transformations of the image domain such that a pixel at a particular layer computes a function of states of pixels in the previous layer through a local function called a filter. Consider a convolutional layer using 3×3 filters, as illustrated in Figure 13.3(a). The computation performed by a single filter at a single pixel in layer l + 1 can be expressed as
+-->
+畳み込みネットワークでは, 特定の層のピクセルがフィルターと呼ばれるローカル関数を通じて前の層のピクセルの状態の関数を計算するように, 画像ドメインの連続的な変換を行います。図13.3(a)に示すように, 3×3フィルターを使用する畳み込み層を考えてみましょう。レイヤー \(l + 1\) の単一ピクセルで単一フィルターによって実行される計算は, 次のように表すことができます。
+\[
+z_i^{(l+1)}=\left(\sum_j w_jz_j^{(l)}+b\right) \tag{13.8}
+\]
+<!--
+where f(･) is a differentiable nonlinear activation function such as ReLU, and the sum over j is taken over all nine pixels in a small patch in layer l. The same function is applied across multiple patches in the image, so that the weights wj and bias b are shared across the patches (and therefore do not carry the index )..
+-->
+ここで, \(f(･)\) はReLUなどの微分可能な非線形活性化関数であり, \(j\) に関する和は, 層 \(l\) の小さなパッチ内の9つのピクセルすべてにわたって取得されます。同じ関数が画像内の複数のパッチに適用されるため, 重みは \(w_j\) およびバイアス \(b\) はパッチ間で共有されます(したがって, インデックスは保持されません)。
+
+</p>
+<center><img src="images/fig13_3.png"></center>
+<p class="margin-large">
+<!--
+Figure 13.3 A convolutional filter for images can be represented as a graph-structured computation. (a) A filter computed by node : in layer \(1 + 1\) of a deep convolutional network is a function of the activation values in layer \(l\) over a local patch of pixels. (b) The same computation structure expressed as a graph showing ‘messages' flowing into node i from its neighbours.
+-->
+図13.3 画像の畳み込みフィルタはグラフ構造の計算として表現できます。(a) 深層畳み込みネットワークの層 \(l +1\) のノード : によって計算されるフィルタは、ピクセルの局所パッチ上の層 \(l\) の活性化値の関数​​です。(b) 同じ計算構造をグラフで表現したもので、近傍ノードからノード i に流れ込む「メッセージ」を示しています。
+</p><p><!--
+As it stands, (13.8) is not equivariant under reordering of the nodes in layer l because the weight vector, with elements wj is not invariant under permutation of its elements. However, we can achieve equivariance with some simple modifications as follows. We first view the filter as a graph, as shown in Figure 13.3(b), and separate out the contribution from node i. The other eight 8 nodes are its neighbours N(i). We then assume that a single weight parameter wneigh is shared across the neighbours so that
+-->
+現状では, (13.8)は, 要素 \(w_j\) を持つ重みベクトルがその要素の並べ替えの下で不変ではないため, 層lのノードの並べ替えの下では等変ではありません。ただし, 次のようにいくつかの簡単な変更を加えることで等分散性を実現できます。まず, 図 13.3(b)に示すように, フィルターをグラフとして表示し, ノード \(i\) からの寄与を分離します。他の8つの8ノードは, その隣接ノード \(\mathcal N(i)\) です。次に, 単一の重みパラメータ \(w_{neigh}\) が隣接するパラメータ間で共有されると仮定します。
+\[
+z_i^{(l+1)}=f\left(w_{neigh}\sum_{j∈\mathcal N(i)} z_j^{(l)}+w_{self} z_i^{(l)}+b\right) \tag{13.9}
+\]
+<!--
+where node i has its own weight parameter wself.
+-->
+ここで, ノード \(i\) はそれ自体の重みパラメータ \(w_{self}\) を持ちます。
+</p><p><!--
+We can interpret (13.9) as updating a local representation zi at node i by gathering information from the neighbouring nodes by passing messages from the neighbouring nodes into node i. In this case the messages are simply the activations of the other nodes. These messages are then combined with information from node i, and the result is transformed using a nonlinear function. The information from the neighbouring nodes is aggregated through a simple summation in (13.9), and this is, clearly invariant to any permutation of the labels associated with those nodes. Furthermore, the operation (13.9) is applied synchronously to every node in a graph, and so if the nodes are permuted then the resulting computations will be unchanged but their ordering will be likewise permuted, and hence, this calculation is equivariant under node reordering. Note that this depends on the parameters wneigh, Wself, and b being shared across all nodes.
+-->
+(13.9)は, 隣接ノードからノード \(i\) にメッセージを渡すことによって隣接ノードから情報を収集することによって, ノード \(i\) でのローカル表現 \(z_i\) を更新すると解釈できます。この場合, メッセージは単に他のノードの活性度です。これらのメッセージはノード \(i\) からの情報と結合され, 結果は非線形関数を使用して変換されます。隣接するノードからの情報は, (13.9)の単純な合計によって集約されます。これは, 明らかに, それらのノードに関連付けられたラベルの並べ替えに対して不変です。さらに, 操作(13.9)はグラフ内のすべてのノードに同期的に適用されるため, ノードが並べ替えられた場合, 結果の計算は変更されませんが, 順序も同様に並べ替えられます。したがって, この計算はノードの並べ替えの下で等価です。これは, すべてのノード間で共有されるパラメーター \(w_{neigh}, w_{self}\) および \(b\) に依存することに注意してください。
+</p>
+<h3>13.2.2 グラフ畳み込みネットワーク</h3>
+<!--
+<h3>13.2.2 Graph convolutional networks</h3>
+-->
+<p><!--
+We now use the convolution example as a template to construct deep neural networks for graph-structured data. Our goal is to define a flexible, nonlinear transformation of the node embeddings that is differentiable with respect to a set of weight and bias parameters and which maps the variables in layer l into corresponding variables in layer l + 1. For each node n in the graph and for each layer l in the network, we introduce a D-dimensional column vector hn(l) of node-embedding variables, where n = 1,..., N and l=1,...,L. 
+-->
+次に, 畳み込みの例をテンプレートとして使用して, グラフ構造データのディープニューラルネットワークを構築します。私たちの目標は, 重みパラメータとバイアスパラメータの集合に関して微分可能であり, 層lの変数を層 \(l + 1\) の対応する変数にマッピングする, ノードエンベディングの柔軟な非線形変換を定義することです。グラフとネットワーク内の各層 \(l\) に対して, ノード埋め込み変数のD次元列ベクトル \(\mathbf h_n^{(l)}\) を導入します。ここで, \(n = 1, ..., N\) および\(l=1, ..., L\) です。
+</p><p><!--
+We see that the transformation given by (13.9) first gathers and combines information from neighbouring nodes and then updates the node as a function of the current embedding of the node and the incoming messages. We can therefore view each layer of processing as having two successive stages. The first is the aggregation stage in which, for each node n, messages are passed to that node from its neighbours and combined to form a new vector zn(l) in a way that is permutation invariant. This is followed by an update step in which the aggregated information from neighbouring nodes is combined with local information from the node itself and used to calculate a revised embedding vector for that node.
+-->
+(13.9)によって与えられる変換では, 最初に隣接ノードから情報を収集して結合し, 次にノードの現在の埋め込みと受信メッセージの関数としてノードを更新することがわかります。したがって, 処理の各層は2つの連続する段階があると見なすことができます。1つ目は集約段階です。この段階では, ノード \(n\) ごとに, 近隣ノードからメッセージがそのノードに渡され, 順列不変の方法で結合されて新しいベクトル \(z_n^{(l)}\) が形成されます。これに更新ステップが続きます。更新ステップでは, 隣接ノードからの集約情報がノード自体からのローカル情報と結合され, そのノードの修正された埋め込みベクトルを計算するために使用されます。
+</p><p><!--
+Consider a specific node n in the graph. We first aggregate the node vectors from all the neighbours of node n:
+-->
+グラフ内の特定のノード \(n\) について考えてみましょう。まず, ノード \(n\) のすべての隣接ノードからノードベクトルを集約します。
+\[
+\mathbf z_n^{(l)}=Aggregate(\{\mathbf h_m^{(l)}:m∈\mathcal N(n)\}) \tag{13.10}
+\]
+<!--
+The form of this aggregation function is very flexible if it is well defined for a variable number of neighbouring nodes and does not depend on the ordering of those nodes. It can potentially contain learnable parameters as long as it is a differentiable function with respect to those parameters to facilitate gradient descent training.
+-->
+この集約関数の形式は, 可変数の隣接ノードに対して適切に定義されており, それらのノードの順序に依存しない場合, 非常に柔軟です。勾配降下トレーニングを容易にするために, 学習可能なパラメーターに関して微分可能な関数である限り, 学習可能なパラメーターを含む可能性があります。
+</p><p><!--
+We then use another operation to update the embedding vector at node n:
+-->
+次に, 別の操作を使用してノード \(n\) の埋め込みベクトルを更新します。
+\[
+\mathbf h_n^{(l+1)}=Update(\mathbf h_n^{(l)}, \mathbf z_n^{(l)}) \tag{13.11}
+\]
+<!--
+Again, this can be a differentiable function of a set of learnable parameters. Application of the Aggregate operation followed by the Update operation in parallel for every node in the graph represents one layer of the network. The node embeddings are typically initialized using observed node data so that hn(0) = xn. Note that each layer generally has its own independent parameters, although the parameters can also be shared across layers. This framework is called a message-passing neural network (Gilmer er al., 2017) and is summarized in Algorithm 13.1.
+-->
+繰り返しますが, これは学習可能なパラメータの集合の微分可能な関数である可能性があります。グラフ内のすべてのノードに対して, 集約操作とそれに続く更新操作を並行して適用することは, ネットワークの1つの層を表します。ノードの埋め込みは通常, 観測されたノードデータを使用して \(\mathbf h_n^{(0)} = \mathbf x_n\) となるように初期化されます。通常, 各レイヤーには独自の独立したパラメーターがありますが, パラメーターはレイヤー間で共有することもできることに注意してください。このフレームワークはメッセージパッシングニューラルネットワーク(Gilmer et al., 2017)と呼ばれ, アルゴリズム13.1にまとめられています。
+</p>
+<p>
+\[
+\boxed{
+\begin{array}{l}
+\textbf{アルゴリズム 13.1:　単純なメッセージパッシングニューラルネットワーク} \\
+\hline
+入力 :無指向性グラフ \mathcal G=(\mathcal V,\mathcal E)\\
+　　　初期ノード埋め込み \{\mathbf h_n^{(0)}=\mathbf x_n\} \\
+　　　Aggregate(\cdot)関数\\
+　　　Update(\cdot,\cdot)関数\\
+出力：最終ノード埋め込み\{\mathbf h_n^{(L)}\} \\
+\hline
+//メッセージパッシングを繰り返す\\
+for\; l\in \{0,\cdots,L-1\}\;do\\
+　|　\mathbf z_n^{(l)}\leftarrow Aggregare\left(\left\{\mathbf h_m^{(l)}:m\in \mathcal N(n)\right\}\right)\\
+　|　\mathbf h_n^{(l+1)}\leftarrow Update\left(\mathbf h_n^{(l)},\mathbf z_n^{(l)}\right) \\
+end\;for\\
+return\;\{\mathbf h_n^{(L)}\}
+\end{array}
+}
+\]
+</p>
+<h3>13.2.3 集計演算子</h3>
+<!--
+<h3>13.2.3 Aggregation operators</h3>
+-->
+<p><!--
+
+There are many possible forms for the Aggregate function, but it must depend only on the set of inputs and not on their ordering. It must also be a differentiable function of any learnable parameters. The simplest such aggregation function, following from (13.9), is summation:
+-->
+Aggregate 関数には多くの可能な形式がありますが, 入力の順序ではなく入力の集合のみに依存する必要があります。また, 学習可能なパラメータの微分可能な関数でなければなりません。(13.9)に従う最も単純な集計関数は合計です。
+\[
+Aggregate(\{\mathbf h_m^{(l)}:m∈\mathcal N(n)\})=\sum_{m∈\mathcal N(n)} \mathbf h_m^{(l)} \tag{13.12}
+\]
+<!--
+A simple summation is clearly independent of the ordering of the neighbouring nodes and is also well defined no matter how many nodes are in the neighbourhood set. Note that this has no learnable parameters.
+-->
+単純な合計は, 隣接するノードの順序とは明らかに独立しており, 近傍集合内のノードの数に関係なく, 明確に定義されます。 これには学習可能なパラメータがないことに注意してください。
+</p><p><!--
+A summation gives a stronger influence over nodes that have many neighbours compared to those with few neighbours, and this can lead to numerical issues, par ticularly in applications such as social networks where the size of the neighbourhood set can vary by several orders of magnitude. A variation of this approach is to define the Aggregation operation to be the average of the neighbouring embedding vectors so that
+-->
+合計は, 近傍がほとんどないノードと比較して, 近傍が多数あるノードに対してより強い影響を与えます。これは, 特に近傍集合のサイズが数桁異なる可能性があるソーシャルネットワークなどのアプリケーションでは, 数値的な問題を引き起こす可能性があります。このアプローチのバリエーションは, 集約演算を隣接する埋め込みベクトルの平均になるように定義することです。
+\[
+Aggregate(\{\mathbf h_m^{(l)}:m∈\mathcal N(n)\})=\frac{1}{|\mathcal N(n)| \sum_{m∈\mathcal N(n)} \mathbf h_m^{(l)} \tag{13.13}
+\]
+<!--
+where |N(n)| denotes the number of nodes in the neighbourhood set N(n). However, this normalization also discards information about the network structure and is provably less powerful than a simple summation (Hamilton, 2020), and so the choice of whether to use it depends on the relative importance of node features compared to graph structure.
+-->
+ここで \(|\mathcal N(n)|\) は, 近傍集合内のノードの数 \(\mathcal N(n)\) を示します。ただし, この正規化ではネットワーク構造に関する情報も破棄され, 単純な合計よりも強力ではないことが証明されています(Hamilton, 2020)。したがって, この正規化を使用するかどうかの選択は, グラフ構造と比較したノードの特徴の相対的な重要性に依存します。
+</p><p><!--
+Another variation of this approach (Kipf and Welling, 2016) takes account of the number of neighbours for each of the neighbouring nodes:
+-->
+このアプローチの別のバリエーション(Kipf および Welling, 2016)では, 各隣接ノードの隣接ノードの数が考慮されます。
+\[
+Aggregate(\{\mathbf h_m^{(l)}:m∈\mathcal N(n)\})=\sum_{m∈\mathcal N(n)}\frac{\mathbf h_m^{(l)}}{\sqrt{|\mathcal N(n)|\,|\mathcal N(m)|}} \tag{3.14}
+\]
+<!--
+Yet another possibility is to take the element-wise maximum (or minimum) of the neighbouring embedding vectors, which also satisfies the desired properties of being well defined for a variable number of neighbours and of being independent of their order.
+-->
+さらに別の可能性は, 隣接する埋め込みベクトルの要素ごとの最大値(または最小値)を取得することです。これは, 可変数の近傍について明確に定義され, それらの順序に依存しないという望ましい特性も満たします。
+</p><p><!--
+Since each node in a given layer of the network is updated by aggregating information from its neighbours in the previous layer, this defines a receptive field analogous to the receptive fields of filters used in CNNs. As information is processed through successive layers, the updates to a given node depend on a steadily increasing fraction of other nodes in earlier layers until the effective receptive field potentially spans the whole graph as illustrated in Figure 13.4. However, large, sparse graphs may require an excessive number of layers before each output is influenced by every input. Some architectures therefore introduce an additional ‘super-node' that connects directly to every node in the original graph to ensure fast propagation of information.
+-->
+ネットワークの特定の層の各ノードは, 前の層の隣接ノードからの情報を集約することによって更新されるため, これにより, CNNで使用されるフィルターの受容野に類似した受容野が定義されます。情報が連続層を通じて処理されるにつれて, 特定のノードの更新は, 図13.4に示すように有効受容野が潜在的にグラフ全体に広がるまで, 以前の層の他のノードの割合が着実に増加することに依存します。ただし, 大きくてまばらなグラフでは, 各出力がすべての入力の影響を受ける前に, 過剰な数のレイヤーが必要になる場合があります。したがって, 一部のアーキテクチャでは, 元のグラフ内のすべてのノードに直接接続する追加の'スーパーノード'を導入して, 情報の高速伝播を保証します。
+</p>
+<center><img src="images/fig13_4.png"></center>
+<p class="margin-large">
+<!--
+Figure 13.4 Schematic illustration of information flow through successive layers of a graph neural network. In the third layer a single node is highlighted in red. It receives information from its two neighbours in the previous layer and those in turn receive information from their neighbours in the first layer. As with convolutional neural networks for images, we see that the effective receptive field, corresponding to the number of nodes shown in red, grows with the number of processing layers.
+-->
+図13.4。グラフニューラルネットワークの連続層を通る情報の流れの概略図。3番目のレイヤーでは, 単一のノードが赤で強調表示されます。前の層の2つの近隣から情報を受信し, それらは順番に最初の層の近隣から情報を受信します。画像の畳み込みニューラルネットワークと同様に, 赤色で示されたノードの数に対応する有効受容野が, 処理層の数とともに増加することがわかります。
+</p><p><!--
+The aggregation operators discussed so far have no learnable parameters. We can introduce such parameters if we first transform each of the embedding vectors from neighbouring nodes using a multilayer neural network, denoted by \(MLP_φ\), before combining their outputs, where MLP denotes ‘multilayer perceptron' and represents the parameters of the network. So long as the network has a structure and parameter values that are shared across nodes then this aggregation operator again be permutation invariant. We can also transform the combined vector with another neural network \(MLP_θ\), with parameters \(θ\), to give an overall aggregation operator:
+-->
+これまで説明した集計演算子には, 学習可能なパラメーターがありません。\(MLP_\phi\) で示される多層ニューラルネットワークを使用して隣接ノードからの各埋め込みベクトルを最初に変換してから, その出力を結合する場合, このようなパラメーターを導入できます。\(MLP\) は '多層パーセプトロン' を表し, ネットワークのパラメーターを表します。ネットワークがノード間で共有される構造とパラメータ値を持っている限り, この集約演算子は再び順列不変になります。また, 組み合わせたベクトルを別のニューラル ネットワーク \(MLP_θ\) (パラメータ \(θ\) を使用)で変換して, 全体的な集計演算子を与えることもできます。
+\[
+Aggregate(\{\mathbf h_m^{(l)}:m∈\mathcal N(n)\})=MLP_θ\left(\sum_{m∈\mathcal N(n)}MLP_\phi(\mathbf h_m^{(l)})\right) \tag{13.15}
+\]
+<!--
+in which MLPφ and MLPθ are shared across layer l. Due to the flexibility of MLPs, the transformation defined by (13.15) represents a universal approximator for any permutation-invariant function that maps a set of embeddings to a single embedding (Zaheer et al., 2017). Note that the summation can be replaced by other invariant functions such as averages or an element-wise maximum or minimum.
+-->
+ここで, \(MLP_\phi\) と \(MLP_θ\) は層l全体で共有されます。\(MLP\) の柔軟性により, (13.15)で定義される変換は, 一連の埋め込みを単一の埋め込みにマッピングする任意の順列不変関数の汎用近似器を表します(Zaheer et al., 2017)。合計は, 平均や要素ごとの最大値または最小値など, 他の不変関数で置き換えることができることに注意してください。
+
+</p><p><!--
+A special case of graph neural networks arises if we consider a graph having no edges, which corresponds simply to an unstructured set of nodes. In this case if we use (13.15) for each vector hn(l) in the set, in which the summation is taken over all other vectors except hn(l), then we have a general framework for learning functions over unstructured sets of variables known as deep sets.
+-->
+エッジを持たないグラフを考慮すると, グラフニューラルネットワークの特殊なケースが生じます。これは, 構造化されていないノードのセットに単純に対応します。この場合, 集合内の各ベクトル \(\mathbf h_n^{(l)}\) に対して(13.15)を使用し,  \(\mathbf h_n^{(l)}\) を除く他のすべてのベクトルの合計を取得すると, ディープセットとして知られる, 非構造化変数集合に対する関数を学習するための一般的なフレームワークが得られます。
+</p>
+<h3>13.2.4 更新演算子</h3>
+<!--
+<h3>13.2.4 Update operators</h3>
+-->
+<p><!--
+Having chosen a suitable Aggregate operator, we similarly need to decide on the form of the Update operator. By analogy with (13.9) for the CNN, a simple form for this operator would be
+-->
+適切な集約演算子を選択したら, 同様に更新演算子の形式を決定する必要があります。CNNの(13.9)と類推すると, この演算子の単純な形式は次のようになります。
+\[
+Update(\mathbf h_n^{(l)}, \mathbf z_n^{(l)} )=f(\mathbf W_{self} \mathbf h_n^{(l)}+\mathbf W_{neigh} \mathbf z_n^{(l)}+\mathbf b) \tag{13.16}
+\]
+<!--
+where f(･) is a nonlinear activation function such as ReLU applied element-wise to its vector argument, and where Wself, Wneigh, and b are the learnable weights and biases and zn(l) is defined by the Aggregate operator (13.10).
+-->
+ここで \(f(･)\) はベクトル引数に要素ごとに適用されるReLUなどの非線形活性化関数, \(\mathbf W_{self}, \mathbf W_{neigh}, \mathbf b\) は学習可能な重みとバイアス, \(\mathbf z_n^{(l)}\) は集約演算子(13.10)によって定義されます。
+</p><p><!--
+If we choose a simple summation (13.12) as the aggregation function and if we also share the same weight matrix between nodes and their neighbours so that Wself = Wneigh, We obtain a particularly simple form of Update operator given by
+-->
+集計関数として単純な合計(13.12)を選択し, \(\mathbf W_{self} = \mathbf W_{neigh}\) となるように同じ重み行列をノードとその隣接ノード間で共有する場合, 次のような特に単純な形式の更新演算子が得られます。
+\[
+\mathbf h_n^{(l+1)}=Update(\mathbf h_n^{(l)}, \mathbf z_n^{(l)})=f\left(\mathbf W_{neigh}\sum_{m∈\mathcal N(n)}\mathbf h_m^{(l)}+\mathbf b\right) \tag{13.17}
+\]
+<!--
+The message-passing algorithm is typically initialized by setting hn(0) = xn. Sometimes, however, we may want to have an internal representation vector for each node that has a higher, or lower, dimensionality than that of xn. Such a representation can be initialized by padding the node vectors xn with additional zeros (to achieve a higher dimensionality) or simply by transforming the node vectors using a learnable linear transformation to a space of the desired number of dimensions. An alternative form of initialization, particularly when there are no data variables associated with the nodes, is to use a one-hot vector that labels the degree of each node (i.e., the number of neighbours).
+-->
+</p><p>
+メッセージパッシングアルゴリズムは通常, \(\mathbf h_n^{(0)} = \mathbf x_n\) を設定することによって初期化されます。ただし, 場合によっては, \(\mathbf x_n\) の次元よりも高い次元または低い次元を持つ各ノードの内部表現ベクトルが必要になる場合があります。このような表現は, (高次元を実現するために)ノードベクトルxnに追加のゼロをパディングすることによって, または単に学習可能な線形変換を使用してノードベクトルを目的の次元数の空間に変換することによって初期化できます。特にノードに関連付けられたデータ変数がない場合の初期化の別の形式は, 各ノードの次数(つまり, 近傍の数)にラベルを付けるワンホット ベクトルを使用することです。
+</p><p><!--
+Overall, we can represent a graph neural network as a sequence of layers that successively transform the node embeddings. If we group these embeddings into a matrix H whose nth row is the vector hnT, which is initialized to the data matrix X, then we can write the successive transformations in the form
+-->
+全体として, グラフニューラルネットワークは, ノードの埋め込みを連続的に変換する一連の層として表すことができます。 これらの埋め込みを, データ行列Xに初期化されたベクトルhnTをn番目の行とする行列Hにグループ化すると, 連続する変換を次の形式で書くことができます。
+\[
+\begin{align}
+\mathbf H^{(1)} &=\mathbf F(\mathbf X, \mathbf A,\mathbf W^{(1)}) \\
+\mathbf H^{(2)} &=\mathbf F(\mathbf H^{(1)}, \mathbf A,\mathbf W^{(2)}) \\
+\vdots 　&=　\vdots \\
+\mathbf H^{(L)} &=\mathbf F(\mathbf H^{(L-1)}, \mathbf A,\mathbf W^{(L)}) 
+\end{align}
+\tag{13.18}
+\]
+<!--
+where A is the adjacency matrix, and W(l) represents the complete set of weight and biases in layer l of the network. Under a node reordering defined by a permutation matrix P, the transformation of the node embeddings computed by layer l is equivariant:
+-->
+ここで, \(\mathbf A\) は隣接行列, \(\mathbf W^{(l)}\) はネットワークの層 \(l\) の重みとバイアスの完全な集合を表します。置換行列 \(\mathbf P\) によって定義されたノードの並べ替えの下では, 層 \(l\) によって計算されたノードの埋め込みの変換は等変です。
+\[
+\mathbf P\mathbf H^{(l)}=\mathbf F(\mathbf P\mathbf H^{(l-1)},\mathbf P\mathbf A\mathbf P^T,\mathbf W^{(l)}) \tag{13.19}
+\]
+<!--
+As a consequence, the complete network computes an equivariant transformation.
+-->
+結果として, 完全なネットワークは等変変換を計算します。
+</p>
+<h3>13.2.5 ノード分類</h3>
+<!--
+<h3>13.2.5 Node classification</h3>
+-->
+<p><!--
+A graph neural network can be viewed as a series of layers each of which transforms a set of node-embedding vectors {hn(l)} into a new set {hn(l+1)} of the same size and dimensionality. After the final convolutional layer of the network, we need to obtain predictions so that we can define a cost function for training and also for making predictions on new data using the trained network.
+-->
+グラフニューラルネットワークは, 各層がノード埋め込みベクトルのセット{hn(l)}を同じサイズと次元の新しい集合 \(\{\mathbf h_n^{(l+1)}\}\) に変換する一連の層として見ることができます。ネットワークの最後の畳み込み層の後で, トレーニングのためのコスト関数を定義できるように, またトレーニングされたネットワークを使用して新しいデータに対して予測を行うために, 予測を取得する必要があります。
+</p><p><!--
+Consider first the task of classifying the nodes in a graph, which is one of the most common uses for graph neural networks. We can define an output layer, sometimes called a readout layer, which calculates a softmax function for each node corresponding to a classification over C classes, of the form
+-->
+まず, グラフ内のノードを分類するタスクについて考えてみましょう。これは, グラフニューラルネットワークの最も一般的な用途の1つです。出力層(読み出し層とも呼ばれる)を定義できます。これは, Cクラスの分類に対応する各ノードのソフトマックス関数を次の形式で計算します。
+\[
+y_{ni}=\frac{exp(\mathbf w_i^T \mathbf h_n^{(L)})}{\sum_j \exp(\mathbf w_j^T \mathbf h_n^{(L)})} \tag{13.20}
+\]
+<!--
+where {wi} is a set of learnable weight vectors and i = 1, ..., C. We can then define a loss function as the sum of the cross-entropy loss across all nodes and all classes:
+-->
+ここで, \(\{\mathbf w_i\}\) は学習可能な重みベクトルの集合であり, \(i = 1, ..., C\) です。その後, すべてのノードとすべてのクラスにわたるクロスエントロピー損失の合計として損失関数を定義できます。
+\[
+\mathcal L=-\sum_{n∈\mathcal V_{train}}\sum_{i=1}^C y_{ni}^{t_{ni}} \tag{13.21}
+\]
+<!--
+where \(\{t_{ni}\)\) are target values with a one-hot encoding for each value of n. Because the weight vectors {wi} are shared across the output nodes, the outputs yni are equivariant to permutation of the node ordering, and hence the loss function (13.21) is invariant. If the goal is to predict continuous values at the outputs then a simple linear transformation can be combined with a sum-of-squares error to define a suitable loss function.
+-->
+ここで, \(\{t_{ni}\}\) は, \(n\) の各値に対するワンホットエンコーディングを使用したターゲット値です。重みベクトル \(\{\mathbf w_i\}\) は出力ノード間で共有されるため, 出力yniはノードの順序の順列と等価であり, したがって損失関数(13.21)は不変です。出力での連続値を予測することが目的の場合は, 単純な線形変換を二乗和誤差と組み合わせて, 適切な損失関数を定義できます。
+</p><p><!--
+The sum over n in (13.21) is taken over the subset of the nodes denoted by Vtrain and used for training. We can distinguish between three types of nodes as follows:
+-->
+(13.21)のnにわたる合計は, Vtrainで示されるノードのサブセットに渡され, トレーニングに使用されます。次のように3種類のノードを区別できます。
+</p><p><!--
+	The nodes Vtrain are labelled and included in the message-passing operations of the graph neural network and are also used to compute the loss function used for training.
+-->
+<div class="styleBullet">
+<ul>
+<li>1. ノード \(\mathcal V_{train}\) にはラベルが付けられ, グラフニューラルネットワークのメッセージパッシング操作に含まれ, トレーニングに使用される損失関数の計算にも使用されます。</li><br>
+<!--
+	There is potentially also a transductive subset of nodes denoted by Vtrans, which are unlabelled and which do not contribute to the evaluation of the loss function used for training. However, they still participate in the message-passing operations during both training and inference, and their labels may be predicted as part of the inference process.
+-->
+<li>2. \(\mathcal V_{trans}\) で示されるノードの変換サブセットも潜在的に存在します。これらはラベルが付けられておらず, トレーニングに使用される損失関数の評価に寄与しません。ただし, これらはトレーニングと推論の両方でメッセージパッシング操作に引き続き参加し, そのラベルは推論プロセスの一部として予測される場合があります。</li><br>
+<!--
+	The remaining nodes, denoted Vinduct, are a set of inductive nodes that are not used to compute the loss function, and neither these nodes nor their associated edges participate in message-passing during the training phase. However, they do participate in message-passing during the inference phase and their labels are predicted as the outcome of inference.
+-->
+<li>3. \(\mathcal V_{induct}\) と示される残りのノードは, 損失関数の計算には使用されない帰納的ノードの集合であり, これらのノードもそれに関連するエッジもトレーニングフェーズ中のメッセージパッシングには参加しません。ただし, それらは推論フェーズ中にメッセージの受け渡しに参加し, そのラベルは推論の結果として予測されます。</li>
+</ul>
+</div>
+</p><p><!--
+If there are no transductive nodes, and hence the test nodes (and their associated edges) are not available during the training phase, then the training is generally referred to as inductive learning, which can be considered to be a form of supervised learning. However, if there are transductive nodes then it is called transductive learning, which may be viewed as a form of semi-supervised learning.
+-->
+変換ノードがなく, テストノード(およびそれに関連するエッジ)がトレーニングフェーズ中に利用できない場合, そのトレーニングは一般に帰納学習と呼ばれ, 教師あり学習の一種と考えることができます。ただし, トランスダクティブノードがある場合, それはトランスダクティブ学習と呼ばれ, 半教師あり学習の一種と見なすことができます。
+</p>
+<h3>13.2.6 エッジ分類</h3>
+<!--
+<h3>13.2.6 Edge classification</h3>
+-->
+<p><!--
+In some applications we wish to make predictions about the edges of the graph rather than the nodes. A common form of edge classification task is edge completion in which the goal is to determine whether an edge should be present between two nodes. Given a set of node embeddings, the dot product between pairs of embeddings can be used to define a probability p(n, m) for the presence of an edge between nodes n and m by using the logistic sigmoid function:
+-->
+アプリケーションによっては, ノードではなくグラフのエッジについて予測を行いたい場合があります。エッジ分類タスクの一般的な形式はエッジ補完であり, その目的は2つのノード間にエッジが存在する必要があるかどうかを判断することです。 ノードエンベディングの集合が与えられた場合, エンベディングのペア間のドット積を使用して, ロジスティックシグモイド関数を使用してノードnとmの間にエッジが存在する確率 \(p(n, m)\) を定義できます。
+\[
+p(n,m)=σ(\mathbf h_n^T \mathbf h_m) \tag{13.22}
+\]
+<!--
+An example application would be predicting whether two people in a social network have shared interests and therefore might wish to connect.
+-->
+アプリケーション例としては, ソーシャルネットワーク内の2人の人物が共通の関心を持っており, 接続を希望する可能性があるかどうかを予測することが考えられます。
+</p>
+<h3>13.2.7. グラフ分類</h3>
+<!--
+<h3>13.2.7. Graph classification</h3>
+-->
+<p><!--
+In some applications of graph neural networks, the goal is to predict the properties of new graphs given a training set of labelled graphs g1, ..., gN. This requires that we combine the final-layer embedding vectors in a way that does not depend on the arbitrary node ordering, thereby ensuring that the output predictions will be invariant to that ordering. The goal is somewhat like that of the Aggregate function except that all nodes in the graph are included, not just the neighbourhood sets of the individual nodes. The simplest approach is to take the sum of the node-embedding vectors:
+-->
+グラフニューラルネットワークの一部のアプリケーションでは, ラベル付きグラフ \(\mathcal g_1, ..., \mathcal g_N\) のトレーニングセットが与えられた場合に, 新しいグラフのプロパティを予測することが目標となります。これには, 任意のノードの順序に依存しない方法で最終層の埋め込みベクトルを結合する必要があり, それによって出力予測がその順序に対して不変であることが保証されます。目標は, 個々のノードの近傍セットだけでなく, グラフ内のすべてのノードが含まれる点を除けば, 集約関数の目標に似ています。最も簡単なアプローチは, ノード埋め込みベクトルの合計を取ることです。
+\[
+\mathbf y= \mathbf f\left(\sum_{n∈\mathcal V} \mathbf h_n^{(L)}\right) \tag{13.23}
+\]
+<!--
+where the function \(\mathbf f\) may contain learnable parameters such as a linear transformation or a neural network. Other invariant aggregation functions can be used such as averages or element-wise minimum or maximum.
+-->
+ここで, 関数 \(\mathbf f\) には, 線形変換やニューラルネットワークなどの学習可能なパラメーターが含まれる場合があります。平均値や要素ごとの最小値や最大値など, 他の不変集計関数も使用できます。
+</p><p><!--
+A cross-entropy loss is typically used for classification problems, such as labelling a candidate drug molecule as toxic or safe, and a squared-error loss for regression problems, such as predicting the solubility of a candidate drug molecule. Graph-level predictions correspond to an inductive task since there must be separate sets of graphs for training and for inference.
+-->
+クロスエントロピー損失は通常, 候補薬物分子を毒性または安全としてラベル付けするなどの分類問題に使用され, 二乗誤差損失は候補薬物分子の溶解度の予測などの回帰問題に使用されます。トレーニング用と推論用に別々のグラフのセットが必要であるため, グラフレベルの予測は帰納的タスクに対応します。
+</p>
+<h2>13.3 一般的なグラフネットワーク</h2>
+<!--
+<h2>13.3 General Graph Networks</h2>
+-->
+<p><!--
+There are many variations and extensions of the graph networks considered so far. Here we outline a few of the key concepts along with some practical considerations.
+-->
+これまで検討されてきたグラフネットワークには多くのバリエーションや拡張があります。ここでは, いくつかの重要な概念と実際的な考慮事項を概説します。
+</p>
+<h3>13.3.1 グラフアテンションネットワーク</h3>
+<!--
+<h3>13.3.1 Graph attention networks</h3>
+-->
+<p><!--
+The attention mechanism is very powerful when used as the basis of a transformer architecture. It can be used in the context of graph neural networks to construct an aggregation function that combines messages from neighbouring nodes. The incoming messages are weighted by attention coefficients Anm to give
+-->
+アテンションメカニズムは, トランスフォーマーアーキテクチャの基礎として使用すると非常に強力です。これをグラフニューラルネットワークのコンテキストで使用して, 隣接するノードからのメッセージを結合する集約関数を構築できます。受信メッセージはアテンション係数Anmによって重み付けされ, 次のようになります。
+\[
+\mathbf z_n^{(l)}=Aggregate(\{\mathbf h_m^{(l)}:m∈\mathcal N(n)\})=\sum_{m∈\mathcal N(n)} A_{nm}\mathbf h_m^{(l)}  \tag{13.24}
+\]
+<!--
+where the attention coefficients satisfy
+-->
+ここでアテンション係数は以下を満たします
+\[
+\begin{align}
+A_{nm} &≥ 0 \tag{13.25} \\
+\\
+\sum_{m∈\mathcal N(n)} A_{nm} &=1 \tag{13.26}
+\end{align}
+\]
+<!--
+This is known as a graph attention network (Velitkovié et al., 2017) and can capture an inductive bias that says some neighbouring nodes will be more important than others in determining the best update in a way that depends on the data itself.
+-->
+これはグラフアテンションネットワークとして知られており(Velitkovié et al., 2017), データ自体に依存する方法で最適な更新を決定する際に, 一部の隣接ノードが他のノードよりも重要であるという帰納バイアスを捉えることができます。
+</p><p><!--
+There are multiple ways to construct the attention coefficients, and these generally employ a sofimax function. For example, we can use a bilinear form:
+-->
+アテンション係数を構築するには複数の方法があり, 通常は sofimax 関数が使用されますが, たとえば, 双一次形式を使用できます。
+\[
+A_{nm}=\frac{\exp(\mathbf h_n^T \mathbf W \mathbf h_m )}{\sum_{m^\prime∈\mathcal N(n)} \exp(\mathbf h_n^T \mathbf W \mathbf h_{m^\prime})} \tag{13.27}
+\]
+<!--
+where W is a D×D matrix of learnable parameters. A more general option is to use a neural network to combine the embedding vectors from the nodes at each end of the edge:
+-->
+ここで, \(\mathbf W\) は学習可能なパラメータの \(D×D\) 行列です。より一般的なオプションは, ニューラルネットワークを使用して, エッジの両端のノードからの埋め込みベクトルを結合することです。
+\[
+A_{nm}=\frac{\exp{MLP(\mathbf h_n, \mathbf h_m)}}{\sum_{m^\prime∈ \mathcal N(n)} \exp\{MLP(\mathbf h_n, \mathbf h_{m^\prime})\}} \tag{13.28}
+\]
+<!--
+where the MLP has a single continuous output variable whose value is invariant if the input vectors are exchanged. Provided the MLP is shared across all the nodes in the network, this aggregation function will be equivariant under node reordering.
+-->
+ここで, \(MLP\) には, 入力ベクトルが交換された場合に値が不変となる単一の連続出力変数があります。\(MLP\) がネットワーク内のすべてのノードで共有されている場合, この集約関数はノードの並べ替えの下でも等価になります。
+</p><p><!--
+A graph attention network can be extended by introducing multiple attention heads in which H distinct sets of attention weights Anm(h) are defined, for h =1, ..., H, in which each head is evaluated using one of the mechanisms described above and with its own independent parameters. These are then combined in the aggregation step using concatenation and linear projection. Note that, for a fully-connected network, a multi-head graph attention network becomes a standard transformer encoder.
+-->
+グラフアテンションネットワークは, \(H\) 個のアテンションウェイト \(A_{nm}^{(h)}\) が定義されている複数のアテンションヘッドを導入することによって拡張できます(\(h =1, ..., H\) の場合)。説明したメカニズムの 1 つを使用して各ヘッドが評価されます。上記と独自の独立したパラメータを使用します。これらは, 連結と線形射影を使用した集計ステップで結合されます。完全接続ネットワークの場合, マルチヘッドグラフアテンションネットワークが標準のトランスフォーマーエンコーダになることに注意してください。
+</p>
+<h3>13.3.2 エッジ埋め込み</h3>
+<!--
+<h3>13.3.2 Edge embeddings</h3>
+-->
+<p><!--
+The graph neural networks discussed above use embedding vectors that are associated with the nodes. We have seen that some networks also have data associated with the edges. Even when there are no observable values associated with the edges, we can still maintain and update edge-based hidden variables and these can contribute to the internal representations learned by the graph neural network.
+-->
+上で説明したグラフニューラルネットワークは, ノードに関連付けられた埋め込みベクトルを使用します。一部のネットワークにはエッジに関連付けられたデータも存在することがわかりました。エッジに関連付けられた観察可能な値がない場合でも, エッジベースの隠れた変数を維持および更新することができ, これらはグラフニューラルネットワークによって学習された内部表現に貢献できます。
+</p><p><!--
+In addition to the node embeddings given by \(\mathbf h_n^{(l)}\), we therefore introduce edge embeddings enm(l). We can then define general message-passing equations in the form 
+-->
+したがって, \(\mathbf h_n^{(l)}\) によって与えられるノードの埋め込みに加えて, エッジの埋め込み \(\mathbf e_{nm}^{(l)}\) を導入します。次に, 一般的なメッセージ伝達方程式を次の形式で定義できます。
+\[
+\begin{align}
+\mathbf e_{nm}^{(l+1)} &= Update_{edge} \left(\mathbf e_{nm}^{(l)}, \mathbf h_n^{(l)}, \mathbf h_m^{(l)}\right) \tag{13.29} \\
+\\
+\mathbf z_n^{(l+1)} &= Aggregate_{node} \left(\left\{\mathbf e_{nm}^{(l+1)}:m∈\mathcal N(n)\right\}\right) \tag{13.30} \\
+\\
+\mathbf h_n^{(l+1)} &= Update_{node} \left(\mathbf h_n^{(l)}, \mathbf z_n^{(l+1)}\right) \tag{13.31}
+\end{align}
+\]
+<!--
+The learned edge embeddings enm(L) from the final layer can be used directly to make predictions associated with the edges.
+-->
+最終層から学習されたエッジ エンベディング \(\mathbf e_{nm}^{(L)}\) を直接使用して, エッジに関連付けられた予測を行うことができます。
+</p>
+<h3>13.3.3 グラフ埋め込み</h3>
+<!--
+<h3>13.3.3 Graph embeddings</h3>
+-->
+<p><!--
+In addition to node and edge embeddings we can also maintain and update an embedding vector g(l) that relates to the graph as a whole. Bringing all these aspects together allows us to define a more general set of message-passing functions, and a richer set of learned representations, for graph-structured applications. Specifically, we can define general message-passing equations (Battaglia er al., 2018):
+-->
+ノードとエッジの埋め込みに加えて, グラフ全体に関連する埋め込みベクトル \(\mathbf g^{(l)}\) を維持および更新することもできます。これらすべての側面をまとめることで, グラフ構造のアプリケーション向けに, より一般的なメッセージ受け渡し関数のセットと, より豊富な学習済み表現のセットを定義できるようになります。具体的には, 一般的なメッセージ受け渡し方程式を定義できます(Battaglia et al., 2018)。
+\[
+\begin{align}
+\mathbf e_{nm}^{(l+1)} &=Update_{edge}\left(\mathbf e_{nm}^{(l)}, \mathbf h_n^{(l)}, \mathbf h_m^{(l)}, \mathbf g^{(l)} \right) \tag{13.32} \\
+\\
+\mathbf z_n^{(l+1)} &= Aggregate_{node} \left(\left\{\mathbf e_{nm}^{(l+1)}:m∈\mathcal N(n)\right\}\right) \tag{13.33} \\
+\\
+\mathbf h_n^{(l+1)} &= Update_{node} \left(\mathbf h_n^{(l)}, \mathbf z_n^{(l+1)}, \mathbf g^{(l)} \right) \tag{13.34} \\
+\\
+\mathbf g^{(l+1)} &= Update_{graph} \left(\mathbf g^{(l)},\{\mathbf h_n^{(l+1)}:n∈\mathcal V\},\{\mathbf e_{nm}^{(l+1)}:(n,m)∈\mathcal E\}\right) \tag{13.35}
+\end{align}
+\]
+<!--
+These update equations start in (13.32) by updating the edge embedding vectors enm(l+1) based on the previous states of those vectors, on the node embeddings for the nodes connected by each edge, and on a graph-level embedding vector g(l). These updated edge embeddings are then aggregated across every edge connected to each node using (13.33) to give a set of aggregated vectors. These in turn then contribute to the update of the node-embedding vector {hn(l+1)} based on the current node-embedding vectors and on the graph-level embedding vector using (13.34). Finally, the graph-level embedding vector is updated using (13.35) based on information from all the nodes and all the edges in the graph along with the graph-level embedding from the previous layer. These message-passing updates are illustrated in Figure 13.5 and are summarized in Algorithm 13.2.
+-->
+これらの更新方程式は, (13.32)でエッジ埋め込みベクトル \(\mathbf e_{nm}^{(l+1)}\) を, それらのベクトルの前の状態, 各エッジによって接続されたノードのノード埋め込み, およびグラフレベルの埋め込みベクトル \(\mathbf g^{(l)}\) に基づいて更新することで始まります。これらの更新されたエッジ埋め込みは, (13.33)を使用して各ノードに接続されているすべてのエッジにわたって集約され, 集約されたベクトルの集合が得られます。次に, これらは, 現在のノード埋め込みベクトルと, (13.34)を使用したグラフレベルの埋め込みベクトルに基づいて, ノード埋め込みベクトル \(\{\mathbf h_n^{(l+1)}\}\) の更新に寄与します。最後に, グラフレベルの埋め込みベクトルは, 前の層からのグラフレベルの埋め込みとともに, グラフ内のすべてのノードとすべてのエッジからの情報に基づいて (13.35)を使用して更新されます。これらのメッセージパッシングの更新は図13.5に示されており, アルゴリズム13.2にまとめられています。
+</p>
+<center><img src="images/fig13_5.png"></center>
+<p class="margin-large">
+<!--
+Figure 13.5 Illustration of the general graph message-passing updates defined by (13.32) to (13.35), showing (a) edge updates, (b) node updates, and (c) global graph updates. In each case the variable being updated is shown in red and the variables that contribute to that update are those shown in red and blue.
+-->
+図13.5。(13.32)から(13.35)によって定義された一般的なグラフメッセージパッシング更新の図。(a)エッジ更新, (b)ノード更新, および (c)グローバルグラフ更新を示します。いずれの場合も, 更新される変数は赤で表示され, その更新に寄与する変数は赤と青で表示されます。
+</p>
+<p>
+\[
+\boxed{
+\begin{array}{l}
+\textbf{アルゴリズム 13.2:　ノード埋め込み、エッジ埋め込み、} \\
+\textbf{ グラフ埋め込みを使ったグラフニューラルネットワーク} \\
+\hline
+入力 :無指向グラフ　\mathcal G=(\mathcal V,\mathcal E)\\
+　　　初期ノード埋め込み　\{\mathbf h_n^{(0)}\} \\
+　　　初期エッジ埋め込み　\{\mathbf e_{nm}^{(0)}\} \\
+　　　初期グラフ埋め込み　\mathbf g^{(0)} \\
+出力：最終ノード埋め込み　\{\mathbf h_n^{(L)}\}\\
+　　　最終エッジ埋め込み　\{\mathbf e_{nm}^{(L)}\}\\
+　　　最終グラフ埋め込み　\mathbf g^{(L)}\\
+\hline
+//　メッセージパッシングを繰り返す\\
+for\;l\in\{0,\cdots,L-1\}\;do\\
+　|　\mathbf e_{nm}^{(l+1)}\leftarrow Updata_{edge}\left(\mathbf e_{nm}^{(l)},\mathbf h_n^{(l)},\mathbf h_m^{(l)},\mathbf g^{(l)}\right)\\
+　|　\mathbf z_n^{(l+1)}\leftarrow Aggregare_{node}\left(\left\{\mathbf e_{nm}^{(l+1)}:m\in \mathcal N(n)\right\}\right)\\
+　|　\mathbf h_n^{(l+1)}\leftarrow Update_{node}\left(\mathbf h_n^{(l)},\mathbf z_n^{(l+1)},\mathbf g^{(l)}\right)\\
+　|　\mathbf g^{(l+1)}\leftarrow Update_{graph}\left(\mathbf g^{(l)},\{\mathbf h_n^{(l+1)}\},\{\mathbf e_{nm}^{(l+1)}\}\right)\\
+end\;for\\
+return　\{\mathbf h_n^{(L)}\},\{\mathbf e_{nm}^{(L)}\},\mathbf g^{(L)}
+\end{array}
+}
+\]
+</p>
+<h3>13.3.4  過剰平滑化</h3>
+<!--
+<h3>13.3.4 Over-smoothing</h3>
+-->
+<p><!--
+One significant problem that can arise with some graph neural networks is called over-smoothing in which the node-embedding vectors tend to become very similar to each other after a number of iterations of message-passing, which effectively limits the depth of the network. One way to help alleviate this issue is to introduce residual connections. For example, we can modify the update operator (13.34):
+-->
+一部のグラフニューラルネットワークで発生する可能性のある重大な問題の1つは過剰平滑化と呼ばれるもので, メッセージ パッシングを何度も繰り返すとノード埋め込みベクトルが互いに非常に類似する傾向があり, ネットワークの深さが効果的に制限されます。この問題を軽減する1つの方法は, 残差接続を導入することです。たとえば, 更新演算子 (13.34) を変更できます。
+\[
+\mathbf h_n^{(l+1)} = Update_{node} (\mathbf h_n^{(l)}, \mathbf z_n^{(l+1)}, \mathbf g^{(l)})+\mathbf h_n^{(l)} \tag{13.36}
+\]
+<!--
+</p><p>
+Another approach for mitigating the effects of over-smoothing is to allow the output layer to take information from all previous layers of the network and not just the final convolutional layer. This can be done for example by concatenating the representations from previous layers:
+-->
+過剰な平滑化の影響を軽減するもう 1 つのアプローチは, 出力層が最後の畳み込み層だけでなく, ネットワークの以前のすべての層から情報を取得できるようにすることです。これは, たとえば, 前のレイヤーの表現を連結することで実行できます。
+\[
+\mathbf y_n=\mathbf f\left(\mathbf h_n^{(1)}⊕\mathbf h_n^{(2)}⊕⋯⊕\mathbf h_n^{(L)}\right) \tag{13.37}
+\]
+<!--
+where a⊕b denotes the concatenation of vectors a and b. A variant of this would be to combine the vectors using max pooling instead of concatenation. In this case each element of the output vector is given by the max of all the corresponding elements of the embedding vectors from the previous layers.
+-->
+ここで, \(\mathbf a⊕\mathbf b\) はベクトル \(\mathbf a\) と \(\mathbf b\) の連結を表します。これの変形としては, 連結の代わりに最大プーリングを使用してベクトルを結合することが考えられます。この場合, 出力ベクトルの各要素は, 前の層からの埋め込みベクトルの対応するすべての要素の最大値によって与えられます。
+</p>
+<h3>13.3.5  正則化</h3>
+<!--
+<h3>13.3.5 Regularization</h3>
+-->
+<p><!--
+Standard techniques for regularization can be used with graph neural networks, including the addition of penalty terms, such as the sum-of-squares of the parameter values, to the loss function. In addition, some regularization methods have been developed specifically for graph neural networks.
+-->
+グラフニューラルネットワークでは, パラメータ値の二乗和などのペナルティ項を損失関数に追加するなど, 標準的な正則化手法を使用できます。さらに, いくつかの正則化手法はグラフニューラルネットワーク専用に開発されました。
+</p><p><!--
+Graph neural networks already employ weight sharing to achieve permutation equivariance and invariance, but typically they have independent parameters in each layer. However, weights and biases can also be shared across layers to reduce the number of independent parameters.
+-->
+グラフニューラルネットワークはすでに重み共有を採用して置換の等変性と不変性を実現していますが, 通常は各層に独立したパラメーターがあります。ただし, 独立したパラメーターの数を減らすために, 重みとバイアスをレイヤー間で共有することもできます。
+</p><p><!--
+Dropout in the context of graph neural networks involves omitting random sub-sets of the graph nodes during training, with a fresh random subset chosen for each forward pass. This can likewise be applied to the edges in the graph in which randomly selected subsets of entries in the adjacency matrix are removed, or masked, during training.
+-->
+グラフニューラルネットワークのコンテキストにおけるドロップアウトには, トレーニング中のグラフノードのランダムなサブセットの省略が含まれ, フォワードパスごとに新しいランダムサブセットが選択されます。これは, トレーニング中に隣接行列内のエントリのランダムに選択されたサブセットが削除またはマスクされるグラフのエッジにも同様に適用できます。
+</p>
+<h3>13.3.6 幾何学的深層学習</h3>
+<!--
+<h3>13.3.6 Geometric deep learning</h3>
+-->
+<p><!--
+We have seen how permutation symmetry is a key consideration when designing deep learning models for graph-structured data. It acts as a form of inductive bias, dramatically reducing the data requirements while improving predictive performance. In applications of graph neural networks associated with spatial properties, such as graphics meshes, fluid flow simulations, or molecular structures, there are additional equivariance and invariance properties that can be built into the network architecture.
+-->
+グラフ構造データの深層学習モデルを設計する際に, 順列対称性がどのように重要な考慮事項であるかを見てきました。これは帰納バイアスの一種として機能し, 予測パフォーマンスを向上させながらデータ要件を大幅に削減します。グラフィックス メッシュ, 流体フローシミュレーション, 分子構造などの空間特性に関連付けられたグラフニューラルネットワークのアプリケーションでは, ネットワークアーキテクチャに追加の等変性および不変性の特性を組み込むことができます。
+</p><p><!--
+Consider the task of predicting the properties of a molecule, for example when exploring the space of candidate drugs. The molecule can be represented as a list of atoms of given types (carbon, hydrogen, nitrogen, etc.) along with the spatial coordinates of each atom expressed as a three-dimensional column vector. We can introduce an associated embedding vector for each atom n at each layer 1, denoted by rn(l), and these vectors can be initialized with the known atom coordinates. However, the values for the elements of these vectors depends on the arbitrary choice of coordinate system, whereas the properties of the molecule do not. For example, the solubility of the molecule is unchanged if it is rotated in space or translated to a new position relative to the origin of the coordinate system, or if the coordinate system itself is reflected to give the mirror image version of the molecule. The molecular properties should therefore be invariant under such transformations.
+-->
+たとえば, 候補薬の領域を探索する場合など, 分子の特性を予測するタスクを考えてみましょう。分子は, 3次元列ベクトルとして表される各原子の空間座標とともに, 特定のタイプ(炭素, 水素, 窒素など)の原子のリストとして表すことができます。 各層1の原子 \(n\) ごとに, \(\mathbf r_n^{(l)}\) で示される関連する埋め込みベクトルを導入でき, これらのベクトルは既知の原子座標で初期化できます。ただし, これらのベクトルの要素の値は座標系の任意の選択に依存しますが, 分子のプロパティは依存しません。たとえば, 分子が空間内で回転したり, 座標系の原点に対して新しい位置に移動したり, あるいは座標系自体が反射されて分子の鏡像バージョンが得られた場合, 分子の溶解度は変化しません。したがって, 分子の特性はそのような変換の下では不変でなければなりません。
+</p><p><!--
+By making careful choices of the functional forms for the update and aggregation operations (Satorras, Hoogeboom, and Welling, 2021), the new embeddings rn(l) can be incorporated into the graph neural network update equations (13.29) to (13.31) to achieve the required symmetry properties:
+-->
+更新および集計操作の関数形式を慎重に選択することにより(Satorras, Hoogeboom, および Welling, 2021), 新しい埋め込み \(\mathbf r_n^{(l)}\) をグラフニューラルネットワークの更新方程式(13.29)から(13.31)に組み込むことができます。必要な対称特性を実現します。
+\[
+\begin{align}
+\mathbf e_{nm}^{(l+1)} &= Update_{edge}\left(\mathbf e_{nm}^{(l)}, \mathbf h_n^{(l)}, \mathbf h_m^{(l)},‖\mathbf r_n^{(l)}-\mathbf r_m^{(l)} ‖^2 \right) \tag{13.38} \\
+\\
+\mathbf r_n^{(l+1)} &= \mathbf r_n^{(l)}+C\sum_{(n,m)∈\mathcal E} \left(\mathbf r_n^{(l)}-\mathbf r_m^{(l)} \right)\phi\left(\mathbf e_{nm}^{(l+1)} \right) \tag{13.39} \\
+\\
+\mathbf z_n^{(l+1)} &= Aggregate_{node} \left(\left\{\mathbf e_{nm}^{(l+1)}:m∈\mathcal N(n)\right\}\right) \tag{13.40} \\
+\\
+\mathbf h_n^{(l+1)} &= Update_{node} \left(\mathbf h_n^{(l)}, \mathbf z_n^{(l+1)} \right) \tag{13.41}
+\end{align}
+\]
+<!--
+Note that the quantity ||rn(l)-rm(l)||2 represents the squared distance between the coordinates rn(l) and rm(l), and this does not depend on translations, rotations, or reflections. Also, the coordinates rn(l) are updated through a linear combination of the relative differences (rn(l) - rm(l)). Here φ(enm(l+1)) is a general scalar function of the edge embeddings and is represented by a neural network, and the coefficient C is typically set equal to the reciprocal of the number of terms in the sum. It follows that under such transformations, the messages in (13.38), (13.40), and (13.41) are invariant and the coordinate embeddings given by (13.39) are equivariant.
+-->
+量 \(||\mathbf r_n^{(l)}-\mathbf r_m^{(l)}||^2\) は座標 \(\mathbf r_n^{(l)}\) と \(\mathbf r_m^{(l)}\) の間の距離の二乗を表し, これは平行移動, 回転, 反射には依存しないことに注意してください。また, 座標 \(\mathbf r_n^{(l)}\) は, 相対差分 (\(\mathbf r_n^{(l)} -\mathbf  r_m^{(l)}\))の線形結合によって更新されます。ここで, \(φ(\mathbf e_{nm}^{(l+1)})\) はエッジ埋め込みの一般的なスカラー関数であり, ニューラルネットワークで表され, 係数 \(C\) は通常, 合計の項数の逆数に等しく設定されます。 このような変換の下では, (13.38), (13.40), および(13.41)のメッセージは不変であり, (13.39)によって与えられる座標埋め込みは等価であるということになります。
+</p><p><!--
+We have seen many examples of symmetries in structured data, from translations of objects within images and the permutation of node orderings on graphs, to rotations and translations of molecules in three-dimensional space. Capturing these symmetries in the structure of a deep neural network is a powerful form of inductive bias and forms the basis of a rich field of research known as geometric deep learning (Bronstein et al., 2017; Bronstein et al., 2021).
+-->
+私たちは, 画像内のオブジェクトの平行移動やグラフ上のノードの順序の並べ替えから, 3次元空間内の分子の回転や平行移動に至るまで, 構造化データにおける対称性の例を数多く見てきました。ディープニューラルネットワークの構造におけるこれらの対称性の捕捉は, 帰納バイアスの強力な形態であり, 幾何学的深層学習として知られる豊富な研究分野の基礎を形成します(Bronstein et al., 2017; Bronstein et al., 2021)。
+</p>
+<h2>Exercises</h2>
+<h3>13.1 (★) </h3>
+<p><!--
+Show that the permutation (A, B, C, D, E) → (C, E, A, D, B) corresponding to the two choices of node ordering in Figure 13.2 can be expressed in the form (13.5) with a permutation matrix given by (13.1).
+-->
+図13.2のノード順序の2つの選択肢に対応する順列(A, B, C, D, E) → (C, E, A, D, B)が(13.1) で与えられる置換行列を使って(13.5 )で表現できることを示せ。
+</p>
+<h3>13.2 (★★)</h3>
+<p><!--
+ Show that the number of edges connected to each node of a graph is given by the corresponding diagonal element of the matrix \(A^2\) where A is the adjacency matrix.
+-->
+グラフの各ノードに接続されているエッジの数が, 行列 \(A^2\) の対応する対角要素によって与えられることを示せ。ここで,  \(A\) は隣接行列である。
+</p>
+<h3>13.3 (★) </h3>
+<p><!--
+Draw the graph whose adjacency matrix is given by
+-->
+隣接行列が次のように与えられるグラフを描画せよ。
+\[
+A=
+\begin{pmatrix}
+0 & 1 & 1 & 0 & 1 \\
+1 & 0 & 1 & 1 & 1 \\
+1 & 1 & 0 & 1 & 0 \\
+0 & 1 & 1 & 0 & 0 \\
+1 & 1 & 0 & 0 & 0 
+\end{pmatrix}
+\tag{13.42}
+\]
+</p>
+<h3>13.4 (★★) </h3>
+<p><!--
+Show that the effect of pre-multiplying a data matrix X using a permutation matrix P defined by (13.3) is to create a new data matrix ~X given by (13.4) whose rows are permuted according to the permutation function π(･).
+-->
+(13.3)で定義された置換行列Pを使用してデータ行列 \(X\) を事前乗算する効果は, 置換関数 \(π(･)\) に従って行が置換された(13.4) で与えられる新しいデータ行列 \(\tilde{X}\) を作成することであることを示せ。
+</p>
+<h3>13.5 (★★) </h3>
+<p><!--
+Show that the transformed adjacency matrix ~A defined by (13.5), where P is defined by (13.3), is such that both the rows and the columns are permuted according to the permutation function π(･) relative to the original adjacency matrix A.
+-->
+(13.5)で定義される変換された隣接行列 \(\tilde{A}\)  (\(P\) は(13.3)で定義される)は, 行と列の両方が元の隣接行列 \(A\) に対して置換関数 \(π(･)\) に従って置換されることを示せ。
+</p>
+<h3>13.6 (★★) </h3>
+<p><!--
+In this exercise we write the update equations (13.16) as graph-level equations using matrices. To keep the notation uncluttered, we omit the layer index 1. First, gather the node-embedding vectors {hn} into an N×D matrix H in which row n. is given by hnT. Then show that the neighbourhood-aggregated vectors zn given by
+-->
+この演習では, 行列を使用してグラフレベルの方程式として更新方程式(13.16)を作成します。表記をわかりやすくするために, レイヤーインデックス1を省略します。まず, ノード埋め込みベクトル \(\{\mathbf h_n\}\) を, 行 \(n\) の \(N×D\) 行列 \(H\) に集めます。 \(\mathbf h_n^T\) によって与えられます。次に, 近傍集約ベクトルznが次のように与えられることを示します。
+\[
+\mathbf z_n=\sum_{m∈\mathcal N(n)} \mathbf h_m \tag{13.43}
+\]
+<!--
+can be written in matrix form as Z = AH where Z is the N×D matrix in which row nis given by znT and A is the adjacency matrix. Finally, show that the argument to the nonlinear activation function in (13.16) can be written in matrix form as
+-->
+行列形式で \(\mathbf Z = \mathbf A\mathbf H\) と書くことができます。ここで,  \(\mathbf Z\) は \(N×D\) 行列で, 行 \(n_i\) は \(\mathbf z_n^T\) で与えられ, \(A\) は隣接行列です。最後に, (13.16)の非線形活性化関数の引数が行列形式で次のように記述できることを示せ。
+\[
+\mathbf A \mathbf H \mathbf W_{neigh}+\mathbf H \mathbf W_{self}+\mathbf 1_D \mathbf b^T \tag{13.44}
+\]
+<!--
+where \(\mathbf 1_D\)  is the \(D\)-dimensional column vector in which all elements are 1.
+-->
+ここで, \(\mathbf 1_D\) は, すべての要素が1である \(D\) 次元の列ベクトルです。
+</p>
+<h3>13.7 (★★) </h3>
+<p><!--
+By making use of the equivariance property (13.19) for layer l of a deep graph convolutional network along with the permutation property (13.4) for the node variables, show that a complete deep graph convolutional network defined by (13.18) is also equivariant.
+-->
+層の等分散特性(13.19)を利用することにより \(l\) 層のディープグラフ畳み込みネットワークのノード変数の置換プロパティ (13.4)と併せて, (13.18)で定義される完全なディープグラフ畳み込みネットワークも等変であることを示せ。
+</p>
+<h3>13.8 (★★) </h3>
+<p><!--
+Explain why the aggregation function defined by (13.24), in which the attention weights are given by (13.28), is equivariant under a reordering of the nodes in the graph.
+-->
+(13.24)で定義され, アテンションの重みが(13.28)で与えられる集計関数が, グラフ内のノードの並べ替えの下で等変である理由を説明せよ。
+</p>
+<h3>13.9 (★) </h3>
+<p><!--
+Show that a graph attention network in which the graph is fully connected, so that there is an edge between every pair of nodes, is equivalent to a standard transformer architecture.
+-->
+グラフが完全に接続されているため, すべてのノードのペア間にエッジが存在するグラフアテンションネットワークが, 標準のトランスフォーマーアーキテクチャと同等であることを示せ。
+</p>
+<h3>13.10 (★★) </h3>
+<p><!--
+When a coordinate system is translated, the location of an object defined by that coordinate system is transformed using
+-->
+座標系が変換されると, その座標系によって定義されたオブジェクトの位置は次のように変換されます。
+\[
+\tilde{\mathbf r}=\mathbf r+ \mathbf c \tag{13.45}
+\]
+<!--
+where c is a fixed vector describing the translation. Similarly, if the coordinate system is rotated and/or mirror reflected, the location vector of an object is transformed using
+-->
+ここで, \(\mathbf c\) は平行移動を表す固定ベクトルです。同様に, 座標系が回転したり鏡面反射した場合, オブジェクトの位置ベクトルは次を使用して変換されます。
+\[
+\tilde{\mathbf r}=\mathbf R \mathbf r \tag{13.46}
+\]
+<!--
+where R is an orthogonal matrix whose inverse is given by its transpose so that
+-->
+ここで \(\mathbf R\) は直交行列で, その逆行列は転置によって与えられます。
+\[
+\mathbf R\mathbf R^T=\mathbf R^T \mathbf R=\mathbf I \tag{13.47}
+\]
+<!--
+Using these properties, show that under translations, rotations, and reflections, the messages in (13.38), (13.40), and (13.41) are invariant, and that the coordinate embeddings given by (13.39) are equivariant.
+-->
+これらの特性を使用して, 平行移動, 回転, および反射の下で, (13.38), (13.40), および (13.41) のメッセージが不変であること, および(13.39)によって与えられる座標埋め込みが等価であることを示せ。
+</p>
+    </body>
+</html>
